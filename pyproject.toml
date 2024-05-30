@@ -1,0 +1,258 @@
+[project]
+name = "mantaray-py"
+authors = [
+  { name = "mantaray-py", email = "king.arthur@camelot.bt" }
+]
+description = "Mantaray data structure in Python"
+readme = "README.md"
+dynamic = ["version"]
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+requires-python = ">=3.9"
+dependencies = [
+]
+
+[project.urls]
+Documentation = "https://aviksaikat.github.io/mantaray-py/"
+Source = "https://github.com/aviksaikat/mantaray-py"
+
+[tool.hatch]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+
+##############
+# Versioning #
+##############
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
+
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/mantaray_py/_version.py"
+
+
+##################
+# External Tools #
+##################
+
+[tool.mypy]
+files = ["mantaray_py"]
+exclude = ["build/", "dist/", "docs/", "tests/*"]
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+plugins = ["pydantic.mypy"]
+
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+indent-width = 4
+include = [
+  "src/**/*.py",
+  "src/**/*.pyi",
+  "tests/**/*.py",
+  "tests/**/*.pyi"
+]
+
+[tool.ruff.lint]
+preview = true # preview features & checks, use with caution
+extend-select = [ # features in preview
+    "W292", # missing-newline-at-end-of-file
+]
+select = [
+    "A",
+    "ARG",
+    "B",
+    "C",
+    "DTZ",
+    "E",
+    "EM",
+    "F",
+    "FBT", # Boolean trap
+    "ICN",
+    "ISC",
+    "I",
+    "N",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "Q",
+    "RUF",
+    "S",
+    "T",
+    "TID",
+    "UP",
+    "W",
+    "YTT",
+    "RUF100", # Automatically remove unused # noqa directives
+]
+ignore = [
+    # Allow non-abstract empty methods in abstract base classes
+    "B027",
+    # Allow boolean positional values in function calls, like `dict.get(... True)`
+    "FBT003",
+    # Ignore checks for possible passwords
+    "S105", "S106", "S107",
+    # Ignore complexity
+    "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+    "PLC1901", # empty string comparisons
+    "PLW2901", # `for` loop variable overwritten
+    "SIM114", # Combine `if` branches using logical `or` operator
+    "E203", # Whitespace before :, needed for black compatability and also `ruff format`
+    "ISC001", # causes unexpected behaviour with formatter
+]
+
+
+[tool.ruff.format]
+# be more like black
+quote-style = "single"
+
+
+[tool.ruff.lint.isort]
+known-first-party = ["mantaray_py"]
+
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+
+[tool.ruff.lint.per-file-ignores]
+# Allow print/pprint
+"examples/*" = ["T201"]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+
+
+[tool.pytest.ini_options]
+addopts = "--cov=src/mantaray_py/ --cov-report=term-missing"
+
+
+[tool.coverage.run]
+branch = true
+source = ["src/mantaray_py"]
+omit = [
+  # automatically created by hatch-vcs, not in repo
+  "_version.py",
+]
+
+[tool.coverage.paths]
+source = [
+  "src/",
+  "*/site-packages/",
+]
+
+
+#####################
+# Environment Setup #
+#####################
+
+
+# Default env dendencies
+[tool.hatch.envs.default]
+dependencies = [
+  "pydantic",
+]
+post-install-commands = ["pre-commit install"]
+
+
+# Lint env dendencies
+[tool.hatch.envs.lint]
+dependencies = [
+  "mypy",
+  "ruff",
+"deptry",
+]
+
+
+[tool.hatch.envs.lint.scripts]
+typing = [
+  "echo \"VERSION: `mypy --version`\"",
+  "mypy --install-types --non-interactive {args}"
+]
+lint = [
+  "echo \"VERSION: `ruff --version`\"",
+  "ruff format .",
+  "ruff check . --fix",
+  "mypy src/mantaray_py/",
+]
+lint-check = [
+  "echo \"VERSION: `ruff --version`\"",
+  "ruff format --check .",
+  "ruff check .",
+  "mypy src/mantaray_py/",
+]
+
+# Docs env dendencies
+[tool.hatch.envs.docs]
+dependencies = [
+"mkdocs",
+  "mkdocs-material",
+  "mkdocs-gen-files",
+  "mkdocstrings[python]",
+  "linkchecker",
+]
+
+
+[tool.hatch.envs.docs.scripts]
+docs-serve = "mkdocs serve"
+docs-build = "mkdocs build --clean --strict"
+# --ignore-url=None since the SUMMARY.md file leaves a <toc>None</toc> in sitemap.xml
+validate = "linkchecker --config .linkcheckerrc --ignore-url=/reference --ignore-url=None site"
+# https://github.com/linkchecker/linkchecker/issues/678
+build-check = [
+  "docs-build",
+  "validate",
+]
+
+# Testing env dendencies
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest",
+"pytest-cov",
+
+]
+
+
+[tool.hatch.envs.test.scripts]
+test = "pytest"
+test-cov-xml = "pytest --cov-report=xml"
+
+
+# Replace tox & nox
+[[tool.hatch.envs.test.matrix]]
+python = ["3.9"]
+
+#########
+# Build #
+#########
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mantaray_py/"]
