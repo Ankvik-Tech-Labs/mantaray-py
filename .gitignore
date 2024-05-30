@@ -108,8 +108,9 @@ ENV/
 .DS_Store
 .vscode/
 
-# pdm 
+# pdm
 .pdm-python
 
 # ruff
-.ruff_cache/*
+.ruff_cache/
+_verion.py

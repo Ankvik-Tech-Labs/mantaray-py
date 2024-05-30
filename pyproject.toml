@@ -67,6 +67,7 @@ include = [
   "tests/**/*.py",
   "tests/**/*.pyi"
 ]
+exclude = ["tests", "src/mantaray_py/_version.py"]
 
 [tool.ruff.lint]
 preview = true # preview features & checks, use with caution
@@ -177,9 +178,10 @@ post-install-commands = ["pre-commit install"]
 # Lint env dendencies
 [tool.hatch.envs.lint]
 dependencies = [
+  "pydantic",
   "mypy",
   "ruff",
-"deptry",
+  "deptry",
 ]
 
 
@@ -227,8 +229,7 @@ build-check = [
 [tool.hatch.envs.test]
 dependencies = [
   "pytest",
-"pytest-cov",
-
+  "pytest-cov",
 ]
 
 

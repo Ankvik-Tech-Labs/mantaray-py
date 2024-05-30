@@ -1,9 +1,10 @@
 import pytest
+
 from mantaray_py import add
 
 
 @pytest.mark.parametrize(
-    "a,b,result",
+    'a,b,result',
     [
         (0, 0, 0),
         (1, 1, 2),
