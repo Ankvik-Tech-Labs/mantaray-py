@@ -171,7 +171,9 @@ source = [
 [tool.hatch.envs.default]
 dependencies = [
   "pydantic",
+  "eth-utils"
 ]
+installer = "uv"
 post-install-commands = ["pre-commit install"]
 
 
@@ -183,7 +185,7 @@ dependencies = [
   "ruff",
   "deptry",
 ]
-
+installer = "uv"
 
 [tool.hatch.envs.lint.scripts]
 typing = [
@@ -212,7 +214,7 @@ dependencies = [
   "mkdocstrings[python]",
   "linkchecker",
 ]
-
+installer = "uv"
 
 [tool.hatch.envs.docs.scripts]
 docs-serve = "mkdocs serve"
@@ -231,7 +233,7 @@ dependencies = [
   "pytest",
   "pytest-cov",
 ]
-
+installer = "uv"
 
 [tool.hatch.envs.test.scripts]
 test = "pytest"
