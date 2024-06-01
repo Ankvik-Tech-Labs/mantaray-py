@@ -11,12 +11,12 @@ BYTES_LENGTH = 32
 class IndexBytes(BaseModel):
     bytes_data: list[int] = Field(..., min_length=32, max_length=32)
 
-    def __init__(self, **data):  # type: ignore
+    def __init__(self, **data) -> None:
         super().__init__(**data)
         # Initialize bytes_data with zeros
         self.bytes_data = [0] * 32
 
-    def set_byte(self, byte: int):  # type: ignore
+    def set_byte(self, byte: int) -> None:
         """Set a byte value."""
         if byte > 255:  # noqa: PLR2004
             msg = f"IndexBytes setByte error: {byte} is greater than 255"
@@ -27,7 +27,7 @@ class IndexBytes(BaseModel):
         """Check if a byte is present."""
         return (self.bytes_data[byte // 8] >> byte % 8) & 1 > 0
 
-    def foreach(self, hook: Callable[[int], None]):  # type: ignore
+    def foreach(self, hook: Callable[[int], None]) -> None:
         """Iterate through the indexed byte values."""
         for i in range(256):
             if self.check_byte_present(i):
