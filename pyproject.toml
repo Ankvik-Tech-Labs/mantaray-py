@@ -119,17 +119,8 @@ ignore = [
 ]
 
 
-[tool.ruff.format]
-# be more like black
-quote-style = "single"
-
-
 [tool.ruff.lint.isort]
 known-first-party = ["mantaray_py"]
-
-
-[tool.ruff.lint.flake8-quotes]
-inline-quotes = "single"
 
 
 [tool.ruff.lint.flake8-tidy-imports]
@@ -242,7 +233,7 @@ test-cov-xml = "pytest --cov-report=xml"
 
 # Replace tox & nox
 [[tool.hatch.envs.test.matrix]]
-python = ["3.9"]
+python = ["3.9", "3.10", "3.11", "3.12"]
 
 #########
 # Build #

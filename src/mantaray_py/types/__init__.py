@@ -1,6 +1,5 @@
 from mantaray_py.types.get_random_values import get_random_values
 from mantaray_py.types.types import (
-    Bytes,
     MarshalVersion,
     MetadataMapping,
     NodeType,
@@ -12,14 +11,13 @@ from mantaray_py.types.types import (
 )
 
 __all__ = [
-    'Bytes',
-    'MarshalVersion',
-    'MetadataMapping',
-    'NodeType',
-    'Reference',
-    'StorageHandler',
-    'get_random_values',
-    'marshal_version_values',
-    'storage_loader',
-    'storage_saver',
+    "MarshalVersion",
+    "MetadataMapping",
+    "NodeType",
+    "Reference",
+    "StorageHandler",
+    "get_random_values",
+    "marshal_version_values",
+    "storage_loader",
+    "storage_saver",
 ]

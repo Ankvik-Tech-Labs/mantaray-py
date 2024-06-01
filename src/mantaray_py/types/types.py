@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 from pydantic import BaseModel
 
-marshal_version_values: tuple[str, str] = ('0.1', '0.2')
+marshal_version_values: tuple[str, str] = ("0.1", "0.2")
 
 MarshalVersion = str
 
@@ -16,11 +16,7 @@ class NodeType(Enum):
     mask = 255
 
 
-class Bytes(BaseModel):
-    length: int
-
-
-Reference = Bytes
+Reference = bytes
 
 
 MetadataMapping = dict[str, str]
