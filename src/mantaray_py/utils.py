@@ -131,7 +131,7 @@ def flatten_bytes_array(bytes_array: bytearray) -> bytes:
     return bytes(flatten_bytes)
 
 
-def bytes_equal(a: bytes, b: bytes) -> bool:
+def equal_bytes(a: bytes, b: bytes) -> bool:
     """Returns True if the two byte arrays are equal, False otherwise.
 
     Args:

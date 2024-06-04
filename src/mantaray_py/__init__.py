@@ -11,10 +11,10 @@ from mantaray_py.types.types import (
     storage_saver,
 )
 from mantaray_py.utils import (
-    bytes_equal,
     check_reference,
     common,
     encrypt_decrypt,
+    equal_bytes,
     find_index_of_array,
     flatten_bytes_array,
     keccak256_hash,
@@ -24,10 +24,10 @@ __all__ = [
     "MetadataMapping",
     "NodeType",
     "Reference",
-    "bytes_equal",
     "check_reference",
     "common",
     "encrypt_decrypt",
+    "equal_bytes",
     " find_index_of_array",
     "find_index_of_array",
     "flatten_bytes_array",

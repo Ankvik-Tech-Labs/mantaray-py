@@ -1,7 +1,7 @@
 [project]
 name = "mantaray-py"
 authors = [
-  { name = "mantaray-py", email = "king.arthur@camelot.bt" }
+  { name = "mantaray-py", email = "github.maturity983@passinbox.com" }
 ]
 description = "Mantaray data structure in Python"
 readme = "README.md"
@@ -176,7 +176,6 @@ dependencies = [
   "ruff",
   "deptry",
 ]
-installer = "uv"
 
 [tool.hatch.envs.lint.scripts]
 typing = [
@@ -196,6 +195,9 @@ lint-check = [
   "mypy src/mantaray_py/",
 ]
 
+# TODO: Add deptry cmds
+
+
 # Docs env dendencies
 [tool.hatch.envs.docs]
 dependencies = [
@@ -205,7 +207,6 @@ dependencies = [
   "mkdocstrings[python]",
   "linkchecker",
 ]
-installer = "uv"
 
 [tool.hatch.envs.docs.scripts]
 docs-serve = "mkdocs serve"
