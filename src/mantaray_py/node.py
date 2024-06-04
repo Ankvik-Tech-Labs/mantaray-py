@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, field_validator
 
@@ -11,7 +11,7 @@ from mantaray_py.types import (
     storage_loader,
     storage_saver,
 )
-from mantaray_py.utils import IndexBytes, check_reference, common, equal_bytes
+from mantaray_py.utils import IndexBytes, check_reference, common, equal_bytes, keccak256_hash
 
 PATH_SEPARATOR = "/"
 PATH_SEPARATOR_BYTE = 47
@@ -118,7 +118,7 @@ class MantarayNode(BaseModel):
     # * Used with NodeType type
     __type: Optional[int]
     __obfuscation_key: Optional[bytes]
-    # * reference of a loaded manifest node. if undefined, the node can be handled as `dirty`
+    # * reference of a loaded manifest node. if undefined i.e. None, the node can be handled as `dirty`
     __content_address: Optional[Reference]
     # * reference of an content that the manifest refers to
     __entry: Optional[Reference]
@@ -187,47 +187,47 @@ class MantarayNode(BaseModel):
     def is_value_type(self) -> bool:
         if self.__type is None:
             raise PropertyIsUndefinedError()
-        return self.__type and NodeType.value == NodeType.value
+        return self.__type & NodeType.value.value == NodeType.value.value
 
     def is_edge_type(self) -> bool:
         if self.__type is None:
             raise PropertyIsUndefinedError()
-        return self.__type and NodeType.edge == NodeType.edge
+        return self.__type & NodeType.edge.value == NodeType.edge.value
 
     def is_with_path_separator_type(self) -> bool:
         if self.__type is None:
             raise PropertyIsUndefinedError()
-        return self.__type and NodeType.with_path_separator == NodeType.with_path_separator
+        return self.__type & NodeType.with_path_separator.value == NodeType.with_path_separator.value
 
     def is_with_metadata_type(self) -> bool:
         if self.__type is None:
             raise PropertyIsUndefinedError()
-        return self.__type and NodeType.with_metadata == NodeType.with_metadata
+        return self.__type & NodeType.with_metadata.value == NodeType.with_metadata.value
 
     def __make_value(self) -> None:
         if self.__type is None:
-            self.__type = NodeType.value
-        self.__type |= NodeType.value
+            self.__type = NodeType.value.value
+        self.__type |= NodeType.value.value
 
     def __make_edge(self) -> None:
         if self.__type is None:
-            self.__type = NodeType.edge
-        self.__type |= NodeType.edge
+            self.__type = NodeType.edge.value
+        self.__type |= NodeType.edge.value
 
     def __make_with_path_separator(self) -> None:
         if self.__type is None:
-            self.__type = NodeType.with_path_separator
-        self.__type |= NodeType.with_path_separator
+            self.__type = NodeType.with_path_separator.value
+        self.__type |= NodeType.with_path_separator.value
 
     def __make_with_metadata(self) -> None:
         if self.__type is None:
-            self.__type = NodeType.with_metadata
-        self.__type |= NodeType.with_metadata
+            self.__type = NodeType.with_metadata.value
+        self.__type |= NodeType.with_metadata.value
 
     def __make_not_with_path_separator(self) -> None:
         if self.__type is None:
             raise PropertyIsUndefinedError()
-        self.__type = (NodeType.mask ^ NodeType.with_path_separator) and self.__type
+        self.__type = (NodeType.mask.value ^ NodeType.with_path_separator.value) & self.__type
 
     def __update_with_path_separator(self, path: bytes) -> None:
         if b"/" in path[1:]:
@@ -333,7 +333,7 @@ class MantarayNode(BaseModel):
         if not self.forks:
             raise ValueError("Fork mapping is not defined in the manifest")
 
-        fork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])
         if not fork:
             raise NotFoundError()
 
@@ -357,7 +357,7 @@ class MantarayNode(BaseModel):
         if not self.forks:
             raise ValueError("Fork mapping is not defined in the manifest")
 
-        fork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])
         if not fork:
             raise NotFoundError(path)
 
@@ -388,7 +388,7 @@ class MantarayNode(BaseModel):
         Returns:
         - Reference: Reference of the top manifest node.
         """
-        result = self.recursive_save(storage_saver)
+        result = self.__recursive_save(storage_saver)
         return result["reference"]
 
     def is_dirty(self) -> bool:
@@ -482,7 +482,7 @@ class MantarayNode(BaseModel):
         ]
 
         if equal_bytes(version_hash, serialize_version("0.1")):
-            raise NotImplementedError
+            raise NotImplementedError()
         elif equal_bytes(version_hash, serialize_version("0.2")):
             ref_bytes_size = data[node_header_size - 1]
             entry = data[node_header_size : node_header_size + ref_bytes_size]
@@ -558,7 +558,7 @@ class MantarayNode(BaseModel):
 
         out = {}
         for fork in self.forks.values():
-            out.update(fork.node.recursive_save(storage_saver))
+            out.update(fork.node.__recursive_save(storage_saver))
 
         serialized_data = self.serialize()
         ref = storage_saver(serialized_data)
@@ -625,7 +625,64 @@ class PropertyIsUndefinedError(Exception):
         super().__init__("Property does not exist in the object")
 
 
-# ! predefined in python
-# class NotImplementedError(Exception):
-#     def __init__(self) -> None:
-#         super().__init__("Not Implemented")
+def node_type_is_with_metadata_type(node_type: int) -> bool:
+    return node_type & NodeType.with_metadata.value == NodeType.with_metadata.value
+
+
+def check_for_separator(node: MantarayNode) -> bool:
+    """
+    Checks for a separator character in the node and its descendants' prefixes.
+
+    Parameters:
+    - node (MantarayNode): The node to check for a separator character.
+
+    Returns:
+    - bool: True if a separator character is found, False otherwise.
+    """
+    if not node.forks:
+        return False
+
+    for fork in node.forks.values():
+        if any(v == PATH_SEPARATOR_BYTE for v in fork.prefix):
+            return True
+
+        if check_for_separator(fork.node):
+            return True
+
+    return False
+
+
+# * The hash length has to be 31 instead of 32 that comes from the keccak hash function
+def serialize_version(version: Union[MarshalVersion, str]) -> bytes:
+    """
+    Serializes the version into a 31-byte hash.
+
+    Parameters:
+    - version (str): The version string to serialize.
+
+    Returns:
+    - bytes: The serialized version as a 31-byte hash.
+    """
+    version_name = "mantaray"
+    version_separator = ":"
+    hash_bytes = keccak256_hash(version_name + version_separator + version)
+
+    return hash_bytes[:31]
+
+
+def serialize_reference_len(entry: Reference) -> bytes:
+    """
+    Serializes the reference length into a single byte.
+
+    Parameters:
+    - entry (int): The reference length.
+
+    Returns:
+    - bytes: The serialized reference length as a single byte.
+    """
+    reference_len = len(entry)
+    if reference_len not in [32, 64]:
+        raise ValueError(f"Wrong referenceLength. It can be only 32 or 64. Got: {len(reference_len)}")
+
+    # Serialize the reference length into a single byte
+    return int.to_bytes(1, "big", signed=False)[0]

@@ -181,15 +181,19 @@ def encrypt_decrypt(
     return data
 
 
-def keccak256_hash(*messages: Union[bytes, bytearray]) -> bytes:
+def keccak256_hash(*messages: Union[str, bytes, bytearray]) -> bytes:
     """
     Helper function for calculating the keccak256 hash with
 
     Args:
-        messages: Any number of messages (bytes, byte arrays)
+        messages: Any number of messages (bytes, byte arrays or text)
     Returns:
         bytes
     """
+
+    if isinstance(message, str):
+        return keccak(text=message)
+
     combined = bytearray()
     for message in messages:
         if not isinstance(message, bytearray) and not isinstance(message, bytes):

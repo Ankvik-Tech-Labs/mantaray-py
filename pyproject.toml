@@ -162,7 +162,8 @@ source = [
 [tool.hatch.envs.default]
 dependencies = [
   "pydantic",
-  "eth-utils"
+  "eth-utils",
+  "eth-hash[pycryptodome]"
 ]
 installer = "uv"
 post-install-commands = ["pre-commit install"]
