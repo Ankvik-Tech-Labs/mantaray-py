@@ -191,8 +191,8 @@ def keccak256_hash(*messages: Union[str, bytes, bytearray]) -> bytes:
         bytes
     """
 
-    if isinstance(message, str):
-        return keccak(text=message)
+    if isinstance(messages, str):
+        return keccak(text=messages)
 
     combined = bytearray()
     for message in messages:

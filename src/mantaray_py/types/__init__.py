@@ -5,9 +5,9 @@ from mantaray_py.types.types import (
     NodeType,
     Reference,
     StorageHandler,
+    StorageLoader,
+    StorageSaver,
     marshal_version_values,
-    storage_loader,
-    storage_saver,
 )
 
 __all__ = [
@@ -16,8 +16,8 @@ __all__ = [
     "NodeType",
     "Reference",
     "StorageHandler",
+    "StorageLoader",
+    "StorageSaver",
     "get_random_values",
     "marshal_version_values",
-    "storage_loader",
-    "storage_saver",
 ]

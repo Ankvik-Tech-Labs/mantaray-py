@@ -22,10 +22,10 @@ Reference = bytes
 MetadataMapping = dict[str, str]
 
 
-storage_loader = Callable[[Reference], bytes]
-storage_saver = Callable[[bytes, Optional[dict]], Reference]
+StorageLoader = Callable[[Reference], bytes]
+StorageSaver = Callable[[bytes, Optional[dict]], Reference]
 
 
 class StorageHandler(BaseModel):
-    load: storage_loader
-    save: storage_saver
+    load: StorageLoader
+    save: StorageSaver

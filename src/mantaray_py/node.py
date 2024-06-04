@@ -1,21 +1,22 @@
 import json
 from typing import Optional, Union
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from mantaray_py.types import (
     MarshalVersion,
     MetadataMapping,
     NodeType,
     Reference,
-    storage_loader,
-    storage_saver,
+    StorageLoader,
+    StorageSaver,
 )
-from mantaray_py.utils import IndexBytes, check_reference, common, equal_bytes, keccak256_hash
+from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes, keccak256_hash
 
 PATH_SEPARATOR = "/"
 PATH_SEPARATOR_BYTE = 47
 PADDING_BYTE = 0x0A
+NODE_SIZE = 255
 
 
 ForkMapping = dict
@@ -58,12 +59,13 @@ class MantarayFork(BaseModel):
         entry: Optional[bytes] = self.node.getContentAddress()
 
         if entry is None:
-            raise ValueError("Cannot serialize MantarayFork because it does not have contentAddress")
+            msg = "Cannot serialize MantarayFork because it does not have contentAddress"
+            raise ValueError(msg)
 
         data = bytes([node_type]) + prefix_len_bytes + prefix_bytes + entry
 
         if self.node.Iswith_metadataType():
-            json_string = json.dumps(self.node.getMetadata())
+            json_string = json.dumps(self.node.get_metadata())
             metadata_bytes = json_string.encode("utf-8")
 
             metadata_size_with_size = len(metadata_bytes) + NodeForkSizes.metadata()
@@ -81,9 +83,8 @@ class MantarayFork(BaseModel):
         prefix_length = data[1]
 
         if prefix_length == 0 or prefix_length > NodeForkSizes.prefixMaxSize():
-            raise ValueError(
-                f"Prefix length of fork is greater than {NodeForkSizes.prefixMaxSize()}. Got: {prefix_length}"
-            )
+            msg = f"Prefix length of fork is greater than {NodeForkSizes.prefixMaxSize()}. Got: {prefix_length}"
+            raise ValueError(msg)
 
         header_size = NodeForkSizes.header()
         prefix = data[header_size : header_size + prefix_length]
@@ -126,32 +127,28 @@ class MantarayNode(BaseModel):
     # * Forks of the manifest. Has to be initialized with `{}` on load even if there were no forks
     forks: Optional[ForkMapping]
 
-    @field_validator("type")
-    def check_type(cls, v):
-        if v > 255:
-            msg = "Node type representation cannot be greater than 255"
-            raise ValueError(msg)
-        return v
-
     def set_content_address(self, content_address: Reference):
         self.__content_address = check_reference(content_address)
 
     def set_entry(self, entry: Reference):
         self.__entry = check_reference(entry)
         if not equal_bytes(entry, bytes(len(entry))):
-            self.____make_value()
+            self.__make_value()
         self.make_dirty()
 
     def set_type(self, _type: int):
-        if _type > 255:
-            raise ValueError("Node type representation cannot be greater than 255")
+        if _type > NODE_SIZE:
+            msg = f"Node type representation cannot be greater than {NODE_SIZE}"
+            raise ValueError(msg)
         self.__type = _type
 
     def set_obfuscation_key(self, obfuscation_key: bytes):
         if not isinstance(obfuscation_key, bytes):
-            raise TypeError("Given obfuscationKey is not a bytes instance.")
-        if len(obfuscation_key) != 32:
-            raise ValueError("Wrong obfuscationKey length. Entry can only be 32 bytes in length")
+            msg = "Given obfuscationKey is not a bytes instance."
+            raise TypeError(msg)
+        if len(obfuscation_key) != 32:  # noqa: PLR2004
+            msg = "Wrong obfuscationKey length. Entry can only be 32 bytes in length"
+            raise ValueError(msg)
         self.__obfuscationKey = obfuscation_key
         self.make_dirty()
 
@@ -159,7 +156,7 @@ class MantarayNode(BaseModel):
         self.__metadata = metadata
         self.__make_with_metadata()
         if metadata.get("website-index-document") or metadata.get("website-error-document"):
-            self.____make_value()
+            self.__make_value()
         self.make_dirty()
 
     def get_obfuscation_key(self) -> Optional[bytes]:
@@ -177,8 +174,9 @@ class MantarayNode(BaseModel):
     def get_type(self) -> int:
         if self.__type is None:
             raise PropertyIsUndefinedError()
-        if self.__type > 255:
-            raise ValueError("Property 'type' in Node is greater than 255")
+        if self.__type > NODE_SIZE:
+            msg = "Property 'type' in Node is greater than NODE_SIZE"
+            raise ValueError(msg)
         return self.__type
 
     # * Node type related functions
@@ -237,18 +235,22 @@ class MantarayNode(BaseModel):
 
     # ? BL methods
 
-    def add_fork(self, path: bytes, entry: Reference, metadata: MetadataMapping = {}) -> None:
+    def add_fork(self, path: bytes, entry: Reference, metadata: MetadataMapping = None) -> None:
         """
         Adds a fork to the current node based on the provided path, entry, and metadata.
 
         Parameters:
-        - path (List[int]): A list representing the path in bytes. Can be empty, in which case `entry` will be set as the current node's entry.
+        - path (List[int]): A list representing the path in bytes. Can be empty, in which case `entry`
+        will be set as the current node's entry.
         - entry (Reference): The entry to be associated with the fork.
-        - metadata (Dict[str, Any], optional): Additional metadata to associate with the fork. Defaults to an empty dictionary.
+        - metadata (Dict[str, Any], optional): Additional metadata to associate with the fork.
+        Defaults to an empty dictionary.
 
         Returns:
         None
         """
+        if metadata is None:
+            metadata = {}
         if not path:
             self.set_entry(entry)
             if metadata:
@@ -260,7 +262,8 @@ class MantarayNode(BaseModel):
             self.forks = {}
 
         if not self.forks:
-            raise ValueError("Fork mapping is not defined in the manifest")
+            msg = "Fork mapping is not defined in the manifest"
+            raise ValueError(msg)
 
         fork = self.forks.get(path[0])
 
@@ -300,7 +303,7 @@ class MantarayNode(BaseModel):
             new_node.__make_edge()
 
             if len(path) == len(common_path):
-                new_node.____make_value()
+                new_node.__make_value()
 
         # * NOTE: special case on edge split
         # * new_node will be the common path edge node
@@ -331,7 +334,8 @@ class MantarayNode(BaseModel):
         if not path:
             raise EmptyPathError()
         if not self.forks:
-            raise ValueError("Fork mapping is not defined in the manifest")
+            msg = "Fork mapping is not defined in the manifest"
+            raise ValueError(msg)
 
         fork: MantarayFork = self.forks.get(path[0])
         if not fork:
@@ -353,9 +357,11 @@ class MantarayNode(BaseModel):
         - path (List[int]): A list representing the path in bytes.
         """
         if not path:
-            raise ValueError("Path is empty")
+            msg = "Path is empty"
+            raise ValueError(msg)
         if not self.forks:
-            raise ValueError("Fork mapping is not defined in the manifest")
+            msg = "Fork mapping is not defined in the manifest"
+            raise ValueError(msg)
 
         fork: MantarayFork = self.forks.get(path[0])
         if not fork:
@@ -371,19 +377,20 @@ class MantarayNode(BaseModel):
         else:
             raise NotFoundError(path)
 
-    def load(self, storage_loader: storage_loader, reference: Reference) -> None:
+    def load(self, storage_loader: StorageLoader, reference: Reference) -> None:
         if not reference:
-            raise ValueError("Reference is undefined at manifest load")
+            msg = "Reference is undefined at manifest load"
+            raise ValueError(msg)
         data = storage_loader(reference)
         self.deserialize(data)
         self.set_content_address(reference)
 
-    def save(self, storage_saver: storage_saver) -> Reference:
+    def save(self, storage_saver: StorageSaver) -> Reference:
         """
         Saves dirty flagged ManifestNodes and its forks recursively.
 
         Parameters:
-        - storage_saver (StorageSaver): An instance of StorageSaver responsible for saving data.
+        - StorageSaver (StorageSaver): An instance of StorageSaver responsible for saving data.
 
         Returns:
         - Reference: Reference of the top manifest node.
@@ -417,7 +424,8 @@ class MantarayNode(BaseModel):
             self.set_obfuscation_key(bytes(32))
         if not self.forks:
             if not self.__entry:
-                raise UndefinedFieldError("Entry")
+                msg = "Entry"
+                raise UndefinedFieldError(msg)
             # * if there were no forks initialized it is not intended to be
             self.forks = {}
         if not self.__entry:
@@ -441,7 +449,8 @@ class MantarayNode(BaseModel):
         for byte in index:
             fork = self.forks.get(byte)
             if fork is None:
-                raise ValueError(f"Fork indexing error: fork has not found under {byte} index")
+                msg = f"Fork indexing error: fork has not found under {byte} index"
+                raise ValueError(msg)
             fork_serializations.append(fork.serialize())
 
         bytes_data = b"".join(
@@ -471,7 +480,8 @@ class MantarayNode(BaseModel):
         node_header_size = NodeHeaderSizes.full()
 
         if len(data) < node_header_size:
-            raise ValueError("The serialized input is too short")
+            msg = "The serialized input is too short"
+            raise ValueError(msg)
 
         self.obfuscation_key = data[: NodeHeaderSizes.obfuscation_key]
         # * perform XOR decryption on bytes after obfuscation key
@@ -507,14 +517,16 @@ class MantarayNode(BaseModel):
 
             for byte in index_forks:
                 if len(data) < offset + NodeForkSizes.node_type:
-                    raise ValueError(f"There is not enough size to read nodeType of fork at offset {offset}")
+                    msg = f"There is not enough size to read nodeType of fork at offset {offset}"
+                    raise ValueError(msg)
 
                 node_type = data[offset : offset + NodeForkSizes.node_type]
                 node_fork_size = NodeForkSizes.pre_reference + ref_bytes_size
 
                 if node_type_is_with_metadata_type(node_type[0]):
                     if len(data) < offset + NodeForkSizes.pre_reference + ref_bytes_size + NodeForkSizes.metadata:
-                        raise ValueError(f"Not enough bytes for metadata node fork at byte {byte}")
+                        msg = f"Not enough bytes for metadata node fork at byte {byte}"
+                        raise ValueError(msg)
 
                     metadata_byte_size = data[
                         offset + node_fork_size : offset + node_fork_size + NodeForkSizes.metadata
@@ -533,7 +545,8 @@ class MantarayNode(BaseModel):
                     )
                 else:
                     if len(data) < offset + NodeForkSizes.pre_reference + ref_bytes_size:
-                        raise ValueError(f"There is not enough size to read fork at offset {offset}")
+                        msg = f"There is not enough size to read fork at offset {offset}"
+                        raise ValueError(msg)
 
                     fork = MantarayFork.deserialize(data[offset : offset + node_fork_size], self.obfuscation_key)
 
@@ -541,20 +554,23 @@ class MantarayNode(BaseModel):
 
                 offset += node_fork_size
         else:
-            raise ValueError("Wrong mantaray version")
+            msg = "Wrong mantaray version"
+            raise ValueError(msg)
 
-    def __recursive_save(self, storage_saver: storage_saver) -> dict[str, Reference]:
+    def __recursive_save(self, storage_saver: StorageSaver) -> dict[str, Reference]:
         """
         Recursively saves the node and its forks.
 
         Parameters:
-        - storage_saver (StorageSaver): An instance of StorageSaver responsible for saving data.
+        - StorageSaver (StorageSaver): An instance of StorageSaver responsible for saving data.
 
         Returns:
-        - dict[str, Reference]: A dictionary containing the reference of the top manifest node and a flag indicating if the node was changed.
+        - dict[str, Reference]: A dictionary containing the reference of the top manifest node and a
+        flag indicating if the node was changed.
         """
         if not self.forks:
-            raise ValueError("Node has no forks")
+            msg = "Node has no forks"
+            raise ValueError(msg)
 
         out = {}
         for fork in self.forks.values():
@@ -681,8 +697,89 @@ def serialize_reference_len(entry: Reference) -> bytes:
     - bytes: The serialized reference length as a single byte.
     """
     reference_len = len(entry)
-    if reference_len not in [32, 64]:
-        raise ValueError(f"Wrong referenceLength. It can be only 32 or 64. Got: {len(reference_len)}")
+    if reference_len not in {32, 64}:
+        msg = f"Wrong referenceLength. It can be only 32 or 64. Got: {len(reference_len)}"
+        raise ValueError(msg)
 
     # Serialize the reference length into a single byte
     return int.to_bytes(1, "big", signed=False)[0]
+
+
+def load_all_nodes(storage_loader: StorageLoader, node: MantarayNode) -> None:
+    """
+    Loads all nodes recursively.
+
+    Parameters:
+    - storage_loader: The storage loader object used for loading nodes.
+    - node: The initial node from which to start loading.
+    """
+    if not node.forks:
+        return
+
+    for fork in node.forks.values():
+        if hasattr(fork.node, "get_entry"):
+            fork.node.load(storage_loader, fork.node.get_entry)
+        load_all_nodes(storage_loader, fork.node)
+
+
+def equal_nodes(a: MantarayNode, b: MantarayNode, accumulated_prefix="") -> None:
+    """
+    Compares two MantarayNode instances recursively and raises an exception if they are not equal.
+
+    Parameters:
+    - a (MantarayNode): The first node to compare.
+    - b (MantarayNode): The second node to compare.
+    - accumulated_prefix (str): Accumulates the prefix during the recursion.
+
+    Raises:
+    - ValueError: If the nodes are not equal.
+    """
+    # Node type comparison
+    if getattr(a, "__type", None) != getattr(b, "__type", None):
+        msg = f"Nodes do not have the same type at prefix \"{accumulated_prefix}\".\na: {getattr(a, '__type', None)} <-> b: {getattr(b, '__type', None)}"  # noqa: E501
+        raise ValueError(msg)
+
+    # Node metadata comparison
+    a_metadata = getattr(a, "__metadata", None)
+    b_metadata = getattr(b, "__metadata", None)
+    if a_metadata is not b_metadata:
+        msg = "One of the nodes does not have metadata defined."
+        raise ValueError(msg)
+
+    if a_metadata is not None and b_metadata is not None:
+        try:
+            a_metadata_str = json.dumps(a_metadata)
+            b_metadata_str = json.dumps(b_metadata)
+        except Exception as exc:
+            msg = f"Either of the nodes has invalid JSON metadata.\n a: {a_metadata}\n b: {b_metadata}"
+            raise ValueError(msg) from exc
+
+        if a_metadata_str != b_metadata_str:
+            msg = f"The nodes' metadata are different.\na: {a_metadata_str}\nb: {b_metadata_str}"
+            raise ValueError(msg)
+
+    # Node entry comparison
+    if getattr(a, "__entry", None) == getattr(b, "__entry", None):
+        msg = f"Nodes do not have the same entries.\n a: {getattr(a, '__entry', None)} \n b: {getattr(b, '__entry', None)}"  # noqa: E501
+        raise ValueError(msg)
+
+    if getattr(a, "forks", None) is None:
+        return
+
+    # Node fork comparison
+    a_keys = list(a.forks.keys())
+    if getattr(b, "forks", None) is None or len(a_keys) != len(list(b.forks.keys())):
+        msg = f"Nodes do not have the same fork length on equality check at prefix {accumulated_prefix}"
+        raise ValueError(msg)
+
+    for key in a_keys:
+        a_fork = a.forks[int(key)]
+        b_fork = b.forks[int(key)]
+        prefix = a_fork["prefix"]
+        prefix_string = "".join(chr(p) for p in prefix)
+
+        if not equal_bytes(prefix, b_fork["prefix"]):
+            msg = f'Nodes do not have the same prefix under the same key "{key}" at prefix {accumulated_prefix}'
+            raise ValueError(msg)
+
+        equal_nodes(a_fork["node"], b_fork["node"], accumulated_prefix + prefix_string)
