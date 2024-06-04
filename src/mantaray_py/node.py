@@ -35,7 +35,7 @@ class MantarayFork(BaseModel):
     node: "MantarayNode"
 
     @staticmethod
-    def _create_metadata_padding(metadata_size_with_size: int) -> bytes:
+    def __create_metadata_padding(metadata_size_with_size: int) -> bytes:
         # can be done as bytes(0) as well
         padding = b""
 
@@ -49,27 +49,27 @@ class MantarayFork(BaseModel):
         return padding
 
     def serialize(self) -> bytes:
-        node_type = self.node.get_type
-        prefix_len_bytes = bytes(1)
-        prefix_len_bytes[0] = len(self.prefix)
+        node_type = self.node.get_type()
+        prefix_len_bytes: bytes = len(self.prefix).to_bytes()  # type: ignore
+        node_fork_sizes: NodeForkSizes = NodeForkSizes()
 
-        prefix_bytes = bytearray(NodeForkSizes.prefixMaxSize())
+        prefix_bytes = bytearray(node_fork_sizes.prefix_max_size)
         prefix_bytes[: len(self.prefix)] = self.prefix
 
-        entry: Optional[bytes] = self.node.getContentAddress()
+        entry: Optional[Reference] = self.node.get_content_address()
 
         if entry is None:
-            msg = "Cannot serialize MantarayFork because it does not have contentAddress"
+            msg = "Cannot serialize MantarayFork because it does not have content_address"
             raise ValueError(msg)
 
         data = bytes([node_type]) + prefix_len_bytes + prefix_bytes + entry
 
-        if self.node.Iswith_metadataType():
+        if self.node.is_with_metadata_type():
             json_string = json.dumps(self.node.get_metadata())
             metadata_bytes = json_string.encode("utf-8")
 
-            metadata_size_with_size = len(metadata_bytes) + NodeForkSizes.metadata()
-            padding = self.create_metadata_padding(metadata_size_with_size)
+            metadata_size_with_size = len(metadata_bytes) + node_fork_sizes.metadata
+            padding = self.__create_metadata_padding(metadata_size_with_size)
 
             metadata_bytes_size = (len(metadata_bytes) + len(padding)).to_bytes(2, byteorder="big")
 
@@ -78,15 +78,18 @@ class MantarayFork(BaseModel):
         return data
 
     @classmethod
-    def deserialize(cls, data: bytes, obfuscation_key: bytes, options: Optional[dict[str, dict[str, int]]] = None):
+    def deserialize(
+        cls, data: bytes, obfuscation_key: bytes, options: Optional[dict[str, dict[str, int]]] = None
+    ) -> "MantarayFork":
         node_type = data[0]
         prefix_length = data[1]
+        node_fork_sizes: NodeForkSizes = NodeForkSizes()
 
-        if prefix_length == 0 or prefix_length > NodeForkSizes.prefixMaxSize():
-            msg = f"Prefix length of fork is greater than {NodeForkSizes.prefixMaxSize()}. Got: {prefix_length}"
+        if prefix_length == 0 or prefix_length > node_fork_sizes.prefix_max_size:
+            msg = f"Prefix length of fork is greater than {node_fork_sizes.prefix_max_size}. Got: {prefix_length}"
             raise ValueError(msg)
 
-        header_size = NodeForkSizes.header()
+        header_size = node_fork_sizes.header
         prefix = data[header_size : header_size + prefix_length]
         node = MantarayNode()
         node.setObfuscationKey(obfuscation_key)
@@ -98,11 +101,11 @@ class MantarayFork(BaseModel):
             metadata_byte_size = with_metadata["metadataByteSize"]
 
             if metadata_byte_size > 0:
-                entry_start = NodeForkSizes.pre_reference()
+                entry_start = node_fork_sizes.pre_reference
                 entry_end = entry_start + ref_bytes_size
                 node.setEntry(data[entry_start:entry_end])
 
-                start_metadata = entry_end + NodeForkSizes.metadata()
+                start_metadata = entry_end + node_fork_sizes.metadata
                 metadata_bytes = data[start_metadata : start_metadata + metadata_byte_size]
 
                 json_string = metadata_bytes.decode("utf-8")
@@ -597,10 +600,12 @@ class NodeForkSizes(BaseModel):
 
     @property
     def header(self) -> int:
+        # 2
         return self.node_type + self.prefix_length
 
     @property
     def prefix_max_size(self) -> int:
+        # 30
         return self.pre_reference - self.header
 
 

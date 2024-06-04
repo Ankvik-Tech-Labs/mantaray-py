@@ -11,7 +11,7 @@ BYTES_LENGTH = 32
 class IndexBytes(BaseModel):
     bytes_data: list[int] = Field(..., min_length=32, max_length=32)
 
-    def __init__(self, **data) -> None:
+    def __init__(self, **data: dict) -> None:
         super().__init__(**data)
         # Initialize bytes_data with zeros
         self.bytes_data = [0] * 32
