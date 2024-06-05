@@ -2,7 +2,7 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
-from mantaray_py.node import MantarayNode
+from mantaray_py.node import MantarayNode, equal_nodes
 from mantaray_py.types.types import (
     MetadataMapping,
     NodeType,
@@ -40,6 +40,7 @@ __all__ = [
     "gen_32_bytes",
     "keccak256_hash",
     "marshal_version_values",
+    "equal_nodes"
 ]
 
 try:

@@ -225,6 +225,8 @@ build-check = [
 # Testing env dendencies
 [tool.hatch.envs.test]
 dependencies = [
+  "pydantic",
+  "eth-utils",
   "pytest",
   "pytest-cov",
 ]
