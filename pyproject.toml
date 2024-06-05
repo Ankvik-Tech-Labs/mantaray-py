@@ -183,7 +183,7 @@ dependencies = [
 [tool.hatch.envs.lint.scripts]
 typing = [
   "echo \"VERSION: `mypy --version`\"",
-  "mypy --install-types --non-interactive {args}"
+  "mypy --install-types --non-interactive src/{args}"
 ]
 lint = [
   "echo \"VERSION: `ruff --version`\"",

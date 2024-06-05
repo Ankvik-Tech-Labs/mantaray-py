@@ -9,12 +9,12 @@ BYTES_LENGTH = 32
 
 
 class IndexBytes(BaseModel):
-    bytes_data: list[int] = Field(..., min_length=32, max_length=32)
+    bytes_data: bytearray = Field(..., min_length=32, max_length=32)
 
     def __init__(self, **data: dict) -> None:
         super().__init__(**data)
         # Initialize bytes_data with zeros
-        self.bytes_data = [0] * 32
+        self.bytes_data = bytearray(32)
 
     def set_byte(self, byte: int) -> None:
         """Set a byte value."""
@@ -22,6 +22,13 @@ class IndexBytes(BaseModel):
             msg = f"IndexBytes setByte error: {byte} is greater than 255"
             raise ValueError(msg)
         self.bytes_data[byte // 8] |= 1 << byte % 8
+
+    def set_bytes(self, byte_array: bytearray) -> None:
+        check_bytes(byte_array, 32)
+        self.bytes_data = byte_array
+
+    def get_bytes(self) -> bytes:
+        return bytes(self.bytes_data)
 
     def check_byte_present(self, byte: int) -> bool:
         """Check if a byte is present."""
@@ -43,7 +50,7 @@ def check_reference(ref: Union[Reference, bytes]) -> None:
         raise ValueError(msg)
 
 
-def check_bytes(data: bytes, length: int) -> None:
+def check_bytes(data: bytearray, length: int) -> None:
     """
     Checks if the given bytes are of the correct type and length.
 
@@ -56,7 +63,7 @@ def check_bytes(data: bytes, length: int) -> None:
         ValueError: If the length of bytes is not equal to the expected length.
     """
     if not isinstance(data, bytes):
-        msg = "Cannot set given bytes, because it is not a bytes type"
+        msg = "Cannot set given bytes, because it is not a bytearray type"
         raise ValueError(msg)
 
     if len(data) != BYTES_LENGTH:
