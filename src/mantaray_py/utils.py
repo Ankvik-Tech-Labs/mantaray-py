@@ -9,13 +9,8 @@ BYTES_LENGTH = 32
 
 
 class IndexBytes(BaseModel):
-    bytes_data: bytearray = Field(..., min_length=32, max_length=32)
+    bytes_data: bytearray = Field(bytearray(32), min_length=32, max_length=32)
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def __init__(self, **data: dict) -> None:
-        super().__init__(**data)
-        # Initialize bytes_data with zeros
-        self.bytes_data = bytearray(32)
 
     def set_byte(self, byte: int) -> None:
         """Set a byte value."""

@@ -1,10 +1,14 @@
 from mantaray_py import MantarayNode, equal_nodes, gen_32_bytes, check_for_separator, init_manifest_node
 import pytest
+from rich.console import Console
 
+console = Console()
 
-def test_single_manaray_node_with_a_random_address(get_sample_mantaray_node):
+def test_single_manaray_node_with_a_random_address():
     node = init_manifest_node()
     random_address = gen_32_bytes()
+    console.print(random_address)
+
     node.set_entry(random_address)
 
     serialized = node.serialize()

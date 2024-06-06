@@ -15,6 +15,9 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+  "pydantic",
+  "eth-utils",
+  "eth-hash[pycryptodome]"
 ]
 
 [project.urls]
@@ -229,8 +232,8 @@ dependencies = [
   "eth-utils",
   "pytest",
   "pytest-cov",
+  "rich"
 ]
-installer = "uv"
 
 [tool.hatch.envs.test.scripts]
 test = "pytest"

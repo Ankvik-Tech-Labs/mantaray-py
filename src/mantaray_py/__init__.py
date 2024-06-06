@@ -58,7 +58,7 @@ def init_manifest_node(options: dict = None) -> MantarayNode:
     if 'obfuscationKey' in options:
         manifest_node.set_obfuscation_key(options['obfuscationKey'])
     else:
-        manifest_node.set_obfuscation_key(None)
+        manifest_node.set_obfuscation_key(gen_32_bytes())
 
     return manifest_node
 

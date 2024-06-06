@@ -1,9 +1,8 @@
 from mantaray_py import MantarayNode, equal_nodes, gen_32_bytes
-import pytest
+from pytest import fixture
 
-@pytest.fixture
+@fixture
 def get_sample_mantaray_node() -> dict[MantarayNode, bytes]:
-
     node = MantarayNode()
     random_address = gen_32_bytes()
     node.set_entry(random_address)

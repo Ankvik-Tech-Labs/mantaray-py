@@ -11,7 +11,8 @@ from mantaray_py.types import (
     StorageLoader,
     StorageSaver,
 )
-from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes, keccak256_hash
+from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes
+from eth_utils import keccak
 
 PATH_SEPARATOR = "/"
 PATH_SEPARATOR_BYTE = 47
@@ -450,11 +451,10 @@ class MantarayNode(BaseModel):
         for fork_index in self.forks.keys():
             index.set_byte(int(fork_index))
         index_bytes = index.get_bytes()
-
         # Forks
-        fork_serializations: list[bytes] = []
+        fork_serializations: bytearray = []
 
-        for byte in index:
+        for byte in index.get_bytes():
             fork = self.forks.get(byte)
             if fork is None:
                 msg = f"Fork indexing error: fork has not found under {byte} index"
@@ -693,7 +693,7 @@ def serialize_version(version: Union[MarshalVersion, str]) -> bytes:
     """
     version_name = "mantaray"
     version_separator = ":"
-    hash_bytes = keccak256_hash(version_name + version_separator + version)
+    hash_bytes = keccak(text=(version_name + version_separator + version))
 
     return hash_bytes[:31]
 
@@ -713,8 +713,9 @@ def serialize_reference_len(entry: Reference) -> bytes:
         msg = f"Wrong referenceLength. It can be only 32 or 64. Got: {reference_len}"
         raise ValueError(msg)
 
+    print(reference_len)
     # Serialize the reference length into a single byte
-    return int.to_bytes(len(entry), byteorder="big", signed=False)  # type: ignore
+    return (reference_len).to_bytes(reference_len, byteorder="big", signed=False)  # type: ignore
 
 
 def load_all_nodes(storage_loader: StorageLoader, node: MantarayNode) -> None:
