@@ -1,7 +1,7 @@
 from typing import Callable, Optional, Union
 
 from eth_utils import keccak  # type: ignore
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mantaray_py.types import Reference, get_random_values
 
@@ -10,6 +10,7 @@ BYTES_LENGTH = 32
 
 class IndexBytes(BaseModel):
     bytes_data: bytearray = Field(..., min_length=32, max_length=32)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **data: dict) -> None:
         super().__init__(**data)

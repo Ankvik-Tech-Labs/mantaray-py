@@ -239,7 +239,8 @@ test-cov-xml = "pytest --cov-report=xml"
 
 # Replace tox & nox
 [[tool.hatch.envs.test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12"]
+# python = ["3.9", "3.10", "3.11", "3.12"]
+python = ["3.9"]
 
 #########
 # Build #

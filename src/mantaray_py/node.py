@@ -1,7 +1,7 @@
 import json
 from typing import Any, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mantaray_py.types import (
     MarshalVersion,
@@ -129,6 +129,8 @@ class MantarayNode(BaseModel):
     __metadata: Optional[MetadataMapping] = None
     # * Forks of the manifest. Has to be initialized with `{}` on load even if there were no forks
     forks: Optional[ForkMapping] = {}
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def set_content_address(self, content_address: Reference) -> None:
         check_reference(content_address)
