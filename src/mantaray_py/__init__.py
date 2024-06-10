@@ -2,8 +2,9 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
-from mantaray_py.node import MantarayNode, equal_nodes, check_for_separator
 from rich.traceback import install
+
+from mantaray_py.node import MantarayNode, check_for_separator, equal_nodes
 from mantaray_py.types.types import (
     MetadataMapping,
     NodeType,
@@ -30,6 +31,7 @@ __all__ = [
     "Reference",
     "StorageLoader",
     "StorageSaver",
+    "check_for_separator",
     "check_reference",
     "common",
     "encrypt_decrypt",
@@ -40,11 +42,11 @@ __all__ = [
     "gen_32_bytes",
     "keccak256_hash",
     "marshal_version_values",
-    "check_for_separator"
 ]
 
 
 install()
+
 
 def init_manifest_node(options: dict = None) -> MantarayNode:
     """
@@ -59,12 +61,13 @@ def init_manifest_node(options: dict = None) -> MantarayNode:
     manifest_node = MantarayNode()
     if options is None:
         options = {}
-    if 'obfuscationKey' in options:
-        manifest_node.set_obfuscation_key(options['obfuscationKey'])
+    if "obfuscationKey" in options:
+        manifest_node.set_obfuscation_key(options["obfuscationKey"])
     else:
         manifest_node.set_obfuscation_key(gen_32_bytes())
 
     return manifest_node
+
 
 try:
     __version__ = version("mantaray-py")

@@ -1,7 +1,9 @@
 import json
 from typing import Any, Optional, Union
 
+from eth_utils import keccak
 from pydantic import BaseModel, ConfigDict
+from rich.traceback import install
 
 from mantaray_py.types import (
     MarshalVersion,
@@ -12,8 +14,6 @@ from mantaray_py.types import (
     StorageSaver,
 )
 from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes
-from eth_utils import keccak
-from rich.traceback import install
 
 install()
 
@@ -433,7 +433,8 @@ class MantarayNode(BaseModel):
         - bytes: Serialized byte array representation of the node.
         """
         if not self.__obfuscation_key:
-            self.set_obfuscation_key(bytes(32))
+            # self.set_obfuscation_key(bytes(32))
+            self.__obfuscation_key = bytes(32)
         if not self.forks:
             if not self.__entry:
                 msg = "Entry"
@@ -457,21 +458,24 @@ class MantarayNode(BaseModel):
         # Forks
         fork_serializations: bytearray = []
 
-        for byte in index.get_bytes():
-            fork = self.forks.get(byte)
-            if fork is None:
-                msg = f"Fork indexing error: fork has not found under {byte} index"
-                raise ValueError(msg)
-            fork_serializations.append(fork.serialize())
+        # for byte in index.get_bytes():
+        #     byte_index = int(byte)
+        #     print(self.forks)
+        #     fork = self.forks.get(byte_index)
+            
+        #     if fork is None:
+        #         msg = f"Fork indexing error: fork has not found under {byte} index"
+        #         raise ValueError(msg)
+        #     fork_serializations.append(fork.serialize())
 
         bytes_data = b"".join(
             [
-                self.obfuscation_key,
+                self.__obfuscation_key,
                 version_bytes,
                 reference_len_bytes,
-                self.entry,
+                self.__entry,
                 index_bytes,
-                *fork_serializations,
+                # *fork_serializations,
             ]
         )
 
@@ -495,9 +499,9 @@ class MantarayNode(BaseModel):
             msg = "The serialized input is too short"
             raise ValueError(msg)
 
-        self.obfuscation_key = data[: node_header_sizes.obfuscation_key]
+        self.__obfuscation_key = data[: node_header_sizes.obfuscation_key]
         # * perform XOR decryption on bytes after obfuscation key
-        encrypt_decrypt(self.obfuscation_key, data, len(self.obfuscation_key))
+        encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))
 
         version_hash = data[
             node_header_sizes.obfuscation_key : node_header_sizes.obfuscation_key + node_header_sizes.version_hash
@@ -512,7 +516,7 @@ class MantarayNode(BaseModel):
             # FIXME: in Bee. if one uploads a file on the bzz endpoint, the node under `/` gets 0 refsize
             if ref_bytes_size == 0:
                 entry = bytes(32)
-            self.entry = entry
+            self.__entry = entry
             offset = node_header_size + ref_bytes_size
             index_bytes = data[offset : offset + 32]
 
@@ -548,7 +552,7 @@ class MantarayNode(BaseModel):
 
                     fork = MantarayFork.deserialize(
                         data[offset : offset + node_fork_size],
-                        self.obfuscation_key,
+                        self.__obfuscation_key,
                         {
                             "with_metadata": {
                                 "ref_bytes_size": ref_bytes_size,
@@ -561,7 +565,7 @@ class MantarayNode(BaseModel):
                         msg = f"There is not enough size to read fork at offset {offset}"
                         raise ValueError(msg)
 
-                    fork = MantarayFork.deserialize(data[offset : offset + node_fork_size], self.obfuscation_key)
+                    fork = MantarayFork.deserialize(data[offset : offset + node_fork_size], self.__obfuscation_key)
 
                 self.forks[byte] = fork
 
