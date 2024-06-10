@@ -17,7 +17,8 @@ requires-python = ">=3.9"
 dependencies = [
   "pydantic",
   "eth-utils",
-  "eth-hash[pycryptodome]"
+  "eth-hash[pycryptodome]",
+  "rich"
 ]
 
 [project.urls]
@@ -168,7 +169,8 @@ source = [
 dependencies = [
   "pydantic",
   "eth-utils",
-  "eth-hash[pycryptodome]"
+  "eth-hash[pycryptodome]",
+  "rich"
 ]
 installer = "uv"
 post-install-commands = ["pre-commit install"]

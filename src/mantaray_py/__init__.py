@@ -3,6 +3,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from mantaray_py.node import MantarayNode, equal_nodes, check_for_separator
+from rich.traceback import install
 from mantaray_py.types.types import (
     MetadataMapping,
     NodeType,
@@ -41,6 +42,9 @@ __all__ = [
     "marshal_version_values",
     "check_for_separator"
 ]
+
+
+install()
 
 def init_manifest_node(options: dict = None) -> MantarayNode:
     """

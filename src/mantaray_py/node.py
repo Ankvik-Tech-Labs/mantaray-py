@@ -13,6 +13,9 @@ from mantaray_py.types import (
 )
 from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes
 from eth_utils import keccak
+from rich.traceback import install
+
+install()
 
 PATH_SEPARATOR = "/"
 PATH_SEPARATOR_BYTE = 47
