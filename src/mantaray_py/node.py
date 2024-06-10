@@ -101,8 +101,8 @@ class MantarayFork(BaseModel):
         with_metadata = options.get("with_metadata") if options else None
 
         if with_metadata:
-            ref_bytes_size = with_metadata["refBytesSize"]
-            metadata_byte_size = with_metadata["metadataByteSize"]
+            ref_bytes_size = with_metadata["ref_bytes_size"]
+            metadata_byte_size = with_metadata["metadata_byte_size"]
 
             if metadata_byte_size > 0:
                 entry_start = node_fork_sizes.pre_reference
@@ -115,7 +115,7 @@ class MantarayFork(BaseModel):
                 json_string = metadata_bytes.decode("utf-8")
                 node.set_metadata(json.loads(json_string))
         else:
-            entry_start = NodeForkSizes.pre_reference
+            entry_start = node_fork_sizes.pre_reference
             node.set_entry(data[entry_start:])
 
         node.set_type(node_type)
@@ -155,12 +155,12 @@ class MantarayNode(BaseModel):
 
     def set_obfuscation_key(self, obfuscation_key: bytes) -> None:
         if not isinstance(obfuscation_key, bytes):
-            msg = "Given obfuscationKey is not a bytes instance."
+            msg = "Given obfuscation_key is not a bytes instance."
             raise TypeError(msg)
         if len(obfuscation_key) != 32:  # noqa: PLR2004
-            msg = "Wrong obfuscationKey length. Entry can only be 32 bytes in length"
+            msg = "Wrong obfuscation_key length. Entry can only be 32 bytes in length"
             raise ValueError(msg)
-        self.__obfuscationKey = obfuscation_key
+        self.__obfuscation_key = obfuscation_key
         self.make_dirty()
 
     def set_metadata(self, metadata: MetadataMapping) -> None:
@@ -171,7 +171,7 @@ class MantarayNode(BaseModel):
         self.make_dirty()
 
     def get_obfuscation_key(self) -> Optional[bytes]:
-        return self.__obfuscationKey
+        return self.__obfuscation_key
 
     def get_entry(self) -> Optional[Reference]:
         return self.__entry
@@ -432,9 +432,45 @@ class MantarayNode(BaseModel):
         Returns:
         - bytes: Serialized byte array representation of the node.
         """
+        self.__obfuscation_key = bytes(
+                    [
+                        156,
+                        128,
+                        64,
+                        188,
+                        244,
+                        62,
+                        116,
+                        105,
+                        22,
+                        191,
+                        202,
+                        221,
+                        147,
+                        40,
+                        177,
+                        0,
+                        240,
+                        247,
+                        143,
+                        145,
+                        55,
+                        237,
+                        74,
+                        82,
+                        201,
+                        163,
+                        82,
+                        32,
+                        113,
+                        207,
+                        196,
+                        83,
+                    ]
+                )
         if not self.__obfuscation_key:
-            # self.set_obfuscation_key(bytes(32))
-            self.__obfuscation_key = bytes(32)
+            self.set_obfuscation_key(bytes(32))
+            #self.set_obfuscation_key(
         if not self.forks:
             if not self.__entry:
                 msg = "Entry"
@@ -457,16 +493,24 @@ class MantarayNode(BaseModel):
         index_bytes = index.get_bytes()
         # Forks
         fork_serializations: bytearray = []
+        # print(index_bytes)
 
-        # for byte in index.get_bytes():
+        # for byte in index_bytes:
         #     byte_index = int(byte)
-        #     print(self.forks)
         #     fork = self.forks.get(byte_index)
-            
+
         #     if fork is None:
         #         msg = f"Fork indexing error: fork has not found under {byte} index"
-        #         raise ValueError(msg)
-        #     fork_serializations.append(fork.serialize())
+        #         # raise ValueError(msg)
+        #     else:
+        #         fork_serializations.append(fork.serialize())
+
+        print(f"{list(bytearray(self.__obfuscation_key))=}")
+        print(f"{list(bytearray(version_bytes))=}")
+        print(f"{list(bytearray(reference_len_bytes))=}")
+        print(f"{list(bytearray(self.__entry))=}")
+        print(f"{list(bytearray(index_bytes))=}")
+        print(f"{list(bytearray(fork_serializations))=}")
 
         bytes_data = b"".join(
             [
@@ -475,7 +519,7 @@ class MantarayNode(BaseModel):
                 reference_len_bytes,
                 self.__entry,
                 index_bytes,
-                # *fork_serializations,
+                *fork_serializations,
             ]
         )
 
@@ -530,25 +574,26 @@ class MantarayNode(BaseModel):
             index_forks = IndexBytes()
             index_forks.set_bytes(bytearray(index_bytes))
             offset += 32
+            node_fork_sizes: NodeForkSizes = NodeForkSizes()
 
             for byte in index_forks:
-                if len(data) < offset + NodeForkSizes.node_type:
+                if len(data) < offset + node_fork_sizes.node_type:
                     msg = f"There is not enough size to read nodeType of fork at offset {offset}"
                     raise ValueError(msg)
 
-                node_type = data[offset : offset + NodeForkSizes.node_type]
-                node_fork_size = NodeForkSizes.pre_reference + ref_bytes_size
+                node_type = data[offset : offset + node_fork_sizes.node_type]
+                node_fork_size = node_fork_sizes.pre_reference + ref_bytes_size
 
                 if node_type_is_with_metadata_type(node_type[0]):
-                    if len(data) < offset + NodeForkSizes.pre_reference + ref_bytes_size + NodeForkSizes.metadata:
+                    if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size + node_fork_sizes.metadata:
                         msg = f"Not enough bytes for metadata node fork at byte {byte}"
                         raise ValueError(msg)
 
                     metadata_byte_size = int.from_bytes(
-                        data[offset + node_fork_size : offset + node_fork_size + NodeForkSizes.metadata],
+                        data[offset + node_fork_size : offset + node_fork_size + node_fork_sizes.metadata],
                         byteorder="big",
                     )
-                    node_fork_size += NodeForkSizes.metadata + metadata_byte_size
+                    node_fork_size += node_fork_sizes.metadata + metadata_byte_size
 
                     fork = MantarayFork.deserialize(
                         data[offset : offset + node_fork_size],
@@ -561,7 +606,7 @@ class MantarayNode(BaseModel):
                         },
                     )
                 else:
-                    if len(data) < offset + NodeForkSizes.pre_reference + ref_bytes_size:
+                    if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size:
                         msg = f"There is not enough size to read fork at offset {offset}"
                         raise ValueError(msg)
 
@@ -720,9 +765,10 @@ def serialize_reference_len(entry: Reference) -> bytes:
         msg = f"Wrong referenceLength. It can be only 32 or 64. Got: {reference_len}"
         raise ValueError(msg)
 
-    print(reference_len)
     # Serialize the reference length into a single byte
-    return (reference_len).to_bytes(reference_len, byteorder="big", signed=False)  # type: ignore
+    byte_array = (reference_len).to_bytes(reference_len, byteorder="big", signed=False)  # type: ignore
+    # Remove leading and trailing zeros
+    return bytearray(byte_array.strip(b"\x00"))
 
 
 def load_all_nodes(storage_loader: StorageLoader, node: MantarayNode) -> None:

@@ -9,7 +9,7 @@ BYTES_LENGTH = 32
 
 
 class IndexBytes(BaseModel):
-    bytes_data: bytearray = Field(bytearray(32), min_length=32, max_length=32)
+    bytes_data: bytearray = Field(bytearray(32), min_length=BYTES_LENGTH, max_length=BYTES_LENGTH)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def set_byte(self, byte: int) -> None:
@@ -58,7 +58,7 @@ def check_bytes(data: bytearray, length: int) -> None:
         ValueError: If bytes is not an instance of bytes.
         ValueError: If the length of bytes is not equal to the expected length.
     """
-    if not isinstance(data, bytes):
+    if not isinstance(data, bytearray):
         msg = "Cannot set given bytes, because it is not a bytearray type"
         raise ValueError(msg)
 
@@ -174,10 +174,11 @@ def encrypt_decrypt(
     if end_index is None:
         end_index = len(data)
 
+    data = bytearray(data)
     for i in range(start_index, end_index, len(key)):  # type: ignore
         max_chunk_index = i + len(key)
         encryption_chunk_end_index = min(max_chunk_index, len(data))
-        encryption_chunk = bytearray(data[i:encryption_chunk_end_index])
+        encryption_chunk = data[i:encryption_chunk_end_index]
         for j in range(len(encryption_chunk)):
             encryption_chunk[j] ^= key[j % len(key)]
         data[i:encryption_chunk_end_index] = encryption_chunk  # type: ignore
