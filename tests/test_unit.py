@@ -17,10 +17,9 @@ def test_single_manaray_node_with_a_random_address():
 
     node.set_entry(random_address)
 
-    serialized = node.serialize()
-    print(list(serialized))
+    serialised = node.serialise()
+    # print(list(serialised))
     new_node = MantarayNode()
-    new_node.deserialize(serialized)
+    new_node.deserialise(serialised)
 
     assert random_address == new_node.get_entry()
-

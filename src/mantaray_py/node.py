@@ -52,7 +52,7 @@ class MantarayFork(BaseModel):
 
         return padding
 
-    def serialize(self) -> bytes:
+    def serialise(self) -> bytes:
         node_type = self.node.get_type()
         prefix_len_bytes: bytes = len(self.prefix).to_bytes()  # type: ignore
         node_fork_sizes: NodeForkSizes = NodeForkSizes()
@@ -63,7 +63,7 @@ class MantarayFork(BaseModel):
         entry: Optional[Reference] = self.node.get_content_address()
 
         if entry is None:
-            msg = "Cannot serialize MantarayFork because it does not have content_address"
+            msg = "Cannot serialise MantarayFork because it does not have content_address"
             raise ValueError(msg)
 
         data = bytes([node_type]) + prefix_len_bytes + prefix_bytes + entry
@@ -82,7 +82,7 @@ class MantarayFork(BaseModel):
         return data
 
     @classmethod
-    def deserialize(
+    def deserialise(
         cls, data: bytes, obfuscation_key: bytes, options: Optional[dict[str, dict[str, int]]] = None
     ) -> "MantarayFork":
         node_type = data[0]
@@ -394,7 +394,7 @@ class MantarayNode(BaseModel):
             msg = "Reference is undefined at manifest load"
             raise ValueError(msg)
         data = storage_loader(reference)
-        self.deserialize(data)
+        self.deserialise(data)
         self.set_content_address(reference)
 
     def save(self, storage_saver: StorageSaver) -> Reference:
@@ -425,52 +425,52 @@ class MantarayNode(BaseModel):
         """
         self.__content_address = None
 
-    def serialize(self) -> bytes:
+    def serialise(self) -> bytes:
         """
-        Serializes the node and its forks into a byte array.
+        serialises the node and its forks into a byte array.
 
         Returns:
-        - bytes: Serialized byte array representation of the node.
+        - bytes: serialised byte array representation of the node.
         """
         self.__obfuscation_key = bytes(
-                    [
-                        156,
-                        128,
-                        64,
-                        188,
-                        244,
-                        62,
-                        116,
-                        105,
-                        22,
-                        191,
-                        202,
-                        221,
-                        147,
-                        40,
-                        177,
-                        0,
-                        240,
-                        247,
-                        143,
-                        145,
-                        55,
-                        237,
-                        74,
-                        82,
-                        201,
-                        163,
-                        82,
-                        32,
-                        113,
-                        207,
-                        196,
-                        83,
-                    ]
-                )
+            [
+                156,
+                128,
+                64,
+                188,
+                244,
+                62,
+                116,
+                105,
+                22,
+                191,
+                202,
+                221,
+                147,
+                40,
+                177,
+                0,
+                240,
+                247,
+                143,
+                145,
+                55,
+                237,
+                74,
+                82,
+                201,
+                163,
+                82,
+                32,
+                113,
+                207,
+                196,
+                83,
+            ]
+        )
         if not self.__obfuscation_key:
             self.set_obfuscation_key(bytes(32))
-            #self.set_obfuscation_key(
+            # self.set_obfuscation_key(
         if not self.forks:
             if not self.__entry:
                 msg = "Entry"
@@ -482,9 +482,9 @@ class MantarayNode(BaseModel):
 
         # Header
         version: MarshalVersion = "0.2"
-        version_bytes: bytes = serialize_version(version)
+        version_bytes: bytes = serialise_version(version)
         # * Entry is already in byte version
-        reference_len_bytes: bytes = serialize_reference_len(self.__entry)
+        reference_len_bytes: bytes = serialise_reference_len(self.__entry)
 
         # ForksIndexBytes
         index = IndexBytes()
@@ -493,7 +493,6 @@ class MantarayNode(BaseModel):
         index_bytes = index.get_bytes()
         # Forks
         fork_serializations: bytearray = []
-        # print(index_bytes)
 
         # for byte in index_bytes:
         #     byte_index = int(byte)
@@ -503,14 +502,14 @@ class MantarayNode(BaseModel):
         #         msg = f"Fork indexing error: fork has not found under {byte} index"
         #         # raise ValueError(msg)
         #     else:
-        #         fork_serializations.append(fork.serialize())
+        #         fork_serializations.append(fork.serialise())
 
-        print(f"{list(bytearray(self.__obfuscation_key))=}")
-        print(f"{list(bytearray(version_bytes))=}")
-        print(f"{list(bytearray(reference_len_bytes))=}")
-        print(f"{list(bytearray(self.__entry))=}")
-        print(f"{list(bytearray(index_bytes))=}")
-        print(f"{list(bytearray(fork_serializations))=}")
+        # print(f"{list(bytearray(self.__obfuscation_key))=}")
+        # print(f"{list(bytearray(version_bytes))=}")
+        # print(f"{list(bytearray(reference_len_bytes))=}")
+        # print(f"{list(bytearray(self.__entry))=}")
+        # print(f"{list(bytearray(index_bytes))=}")
+        # print(f"{list(bytearray(fork_serializations))=}")
 
         bytes_data = b"".join(
             [
@@ -529,18 +528,18 @@ class MantarayNode(BaseModel):
 
         return bytes_data
 
-    def deserialize(self, data: bytes) -> None:
+    def deserialise(self, data: bytes) -> None:
         """
-        Deserializes a byte array back into a node.
+        Deserialises a byte array back into a node.
 
         Parameters:
         - data (bytes): Byte array representation of the node.
         """
         node_header_sizes: NodeHeaderSizes = NodeHeaderSizes()
-        node_header_size = node_header_sizes.full
+        node_header_size: int = node_header_sizes.full
 
         if len(data) < node_header_size:
-            msg = "The serialized input is too short"
+            msg = "The serialised input is too short"
             raise ValueError(msg)
 
         self.__obfuscation_key = data[: node_header_sizes.obfuscation_key]
@@ -550,10 +549,11 @@ class MantarayNode(BaseModel):
         version_hash = data[
             node_header_sizes.obfuscation_key : node_header_sizes.obfuscation_key + node_header_sizes.version_hash
         ]
+        # print(f"{list(version_hash)=}")
 
-        if equal_bytes(version_hash, serialize_version("0.1")):
+        if equal_bytes(version_hash, serialise_version("0.1")):
             raise NotImplementedError()
-        elif equal_bytes(version_hash, serialize_version("0.2")):
+        elif equal_bytes(version_hash, serialise_version("0.2")):
             ref_bytes_size = data[node_header_size - 1]
             entry = data[node_header_size : node_header_size + ref_bytes_size]
 
@@ -571,10 +571,12 @@ class MantarayNode(BaseModel):
             if not equal_bytes(index_bytes, bytes(32)):
                 self.__make_edge()
             self.forks = {}
-            index_forks = IndexBytes()
+            index_forks: IndexBytes = IndexBytes()
             index_forks.set_bytes(bytearray(index_bytes))
             offset += 32
             node_fork_sizes: NodeForkSizes = NodeForkSizes()
+
+            print(index_forks)
 
             for byte in index_forks:
                 if len(data) < offset + node_fork_sizes.node_type:
@@ -595,7 +597,7 @@ class MantarayNode(BaseModel):
                     )
                     node_fork_size += node_fork_sizes.metadata + metadata_byte_size
 
-                    fork = MantarayFork.deserialize(
+                    fork = MantarayFork.deserialise(
                         data[offset : offset + node_fork_size],
                         self.__obfuscation_key,
                         {
@@ -610,7 +612,7 @@ class MantarayNode(BaseModel):
                         msg = f"There is not enough size to read fork at offset {offset}"
                         raise ValueError(msg)
 
-                    fork = MantarayFork.deserialize(data[offset : offset + node_fork_size], self.__obfuscation_key)
+                    fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)
 
                 self.forks[byte] = fork
 
@@ -638,8 +640,8 @@ class MantarayNode(BaseModel):
         for fork in self.forks.values():
             out.update(fork.node.__recursive_save(storage_saver))
 
-        serialized_data = self.serialize()
-        ref = storage_saver(serialized_data, {})
+        serialised_data = self.serialise()
+        ref = storage_saver(serialised_data, {})
         self.set_content_address(ref)
         out["reference"] = ref
         return out
@@ -733,15 +735,15 @@ def check_for_separator(node: MantarayNode) -> bool:
 
 
 # * The hash length has to be 31 instead of 32 that comes from the keccak hash function
-def serialize_version(version: Union[MarshalVersion, str]) -> bytes:
+def serialise_version(version: Union[MarshalVersion, str]) -> bytes:
     """
-    Serializes the version into a 31-byte hash.
+    serialises the version into a 31-byte hash.
 
     Parameters:
-    - version (str): The version string to serialize.
+    - version (str): The version string to serialise.
 
     Returns:
-    - bytes: The serialized version as a 31-byte hash.
+    - bytes: The serialised version as a 31-byte hash.
     """
     version_name = "mantaray"
     version_separator = ":"
@@ -750,22 +752,22 @@ def serialize_version(version: Union[MarshalVersion, str]) -> bytes:
     return hash_bytes[:31]
 
 
-def serialize_reference_len(entry: Reference) -> bytes:
+def serialise_reference_len(entry: Reference) -> bytes:
     """
-    Serializes the reference length into a single byte.
+    serialises the reference length into a single byte.
 
     Parameters:
     - entry (int): The reference length.
 
     Returns:
-    - bytes: The serialized reference length as a single byte.
+    - bytes: The serialised reference length as a single byte.
     """
     reference_len = len(entry)
     if reference_len not in {32, 64}:
         msg = f"Wrong referenceLength. It can be only 32 or 64. Got: {reference_len}"
         raise ValueError(msg)
 
-    # Serialize the reference length into a single byte
+    # serialise the reference length into a single byte
     byte_array = (reference_len).to_bytes(reference_len, byteorder="big", signed=False)  # type: ignore
     # Remove leading and trailing zeros
     return bytearray(byte_array.strip(b"\x00"))
