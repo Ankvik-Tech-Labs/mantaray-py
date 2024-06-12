@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 - Trying to fix deserialization
 - Deserialised method fixed.fixed all mypy errors
 
+### 🧪 Testing
+
+- Added unit tests and all tests passed
+
 ### ⚙️ Miscellaneous Tasks
 
 - Updated changelog
