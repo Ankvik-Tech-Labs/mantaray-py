@@ -23,3 +23,4 @@ def get_sample_mantaray_node() -> dict[MantarayNode, bytes]:
         "node": node,
         "paths": [path.encode() for path in paths],
     }
+

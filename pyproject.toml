@@ -234,7 +234,8 @@ dependencies = [
   "eth-utils",
   "pytest",
   "pytest-cov",
-  "rich"
+  "rich",
+  "swarm-bee-py"
 ]
 
 [tool.hatch.envs.test.scripts]
