@@ -1,6 +1,7 @@
 """Mantaray data structure in Python"""
 
 from importlib.metadata import PackageNotFoundError, version
+from typing import Optional
 
 from rich.traceback import install
 
@@ -48,7 +49,7 @@ __all__ = [
 install()
 
 
-def init_manifest_node(options: dict = None) -> MantarayNode:
+def init_manifest_node(options: Optional[dict] = None) -> MantarayNode:
     """
     Initializes a MantarayNode with an optional obfuscation key.
 

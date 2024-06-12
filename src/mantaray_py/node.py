@@ -132,7 +132,7 @@ class MantarayNode(BaseModel):
     __entry: Optional[Reference] = None
     __metadata: Optional[MetadataMapping] = None
     # * Forks of the manifest. Has to be initialized with `{}` on load even if there were no forks
-    forks: Optional[ForkMapping] = {}
+    forks: Optional[ForkMapping] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -432,42 +432,6 @@ class MantarayNode(BaseModel):
         Returns:
         - bytes: serialised byte array representation of the node.
         """
-        self.__obfuscation_key = bytes(
-            [
-                156,
-                128,
-                64,
-                188,
-                244,
-                62,
-                116,
-                105,
-                22,
-                191,
-                202,
-                221,
-                147,
-                40,
-                177,
-                0,
-                240,
-                247,
-                143,
-                145,
-                55,
-                237,
-                74,
-                82,
-                201,
-                163,
-                82,
-                32,
-                113,
-                207,
-                196,
-                83,
-            ]
-        )
         if not self.__obfuscation_key:
             self.set_obfuscation_key(bytes(32))
             # self.set_obfuscation_key(
@@ -491,18 +455,21 @@ class MantarayNode(BaseModel):
         for fork_index in self.forks.keys():
             index.set_byte(int(fork_index))
         index_bytes = index.get_bytes()
+
         # Forks
-        fork_serializations: bytearray = []
+        fork_serializations: bytearray = bytearray([])
 
-        # for byte in index_bytes:
-        #     byte_index = int(byte)
-        #     fork = self.forks.get(byte_index)
+        def process_byte(byte: int) -> None:
+            byte_index = int(byte)
+            fork = self.forks.get(byte_index)  # type: ignore
 
-        #     if fork is None:
-        #         msg = f"Fork indexing error: fork has not found under {byte} index"
-        #         # raise ValueError(msg)
-        #     else:
-        #         fork_serializations.append(fork.serialise())
+            if fork is None:
+                msg = f"Fork indexing error: fork has not found under {byte!r} index"
+                raise ValueError(msg)
+            else:
+                fork_serializations.append(fork.serialise())
+
+        index.for_each(process_byte)
 
         # print(f"{list(bytearray(self.__obfuscation_key))=}")
         # print(f"{list(bytearray(version_bytes))=}")
@@ -524,7 +491,7 @@ class MantarayNode(BaseModel):
 
         # Encryption
         # perform XOR encryption on bytes after obfuscation key
-        encrypt_decrypt(self.__obfuscation_key, bytes_data, len(self.__obfuscation_key))  # type: ignore
+        encrypt_decrypt(self.__obfuscation_key, bytes_data, len(self.__obfuscation_key))
 
         return bytes_data
 
@@ -576,10 +543,13 @@ class MantarayNode(BaseModel):
             offset += 32
             node_fork_sizes: NodeForkSizes = NodeForkSizes()
 
-            print(index_forks)
+            def process_byte(byte: int) -> None:
+                # Use nonlocal to modify the offset in the outer scope
+                nonlocal offset
+                # print(f"Processing byte: {byte}")
 
-            for byte in index_forks:
                 if len(data) < offset + node_fork_sizes.node_type:
+                    # print(f"Data Length: {len(data)}, Offset: {offset}, Node Fork Size: {node_fork_sizes.node_type}")
                     msg = f"There is not enough size to read nodeType of fork at offset {offset}"
                     raise ValueError(msg)
 
@@ -599,7 +569,7 @@ class MantarayNode(BaseModel):
 
                     fork = MantarayFork.deserialise(
                         data[offset : offset + node_fork_size],
-                        self.__obfuscation_key,
+                        self.__obfuscation_key,  # type: ignore
                         {
                             "with_metadata": {
                                 "ref_bytes_size": ref_bytes_size,
@@ -612,11 +582,13 @@ class MantarayNode(BaseModel):
                         msg = f"There is not enough size to read fork at offset {offset}"
                         raise ValueError(msg)
 
-                    fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)
+                    fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)  # type: ignore
 
-                self.forks[byte] = fork
+                self.forks[byte] = fork  # type: ignore
 
                 offset += node_fork_size
+
+            index_forks.for_each(process_byte)
         else:
             msg = "Wrong mantaray version"
             raise ValueError(msg)
@@ -768,7 +740,7 @@ def serialise_reference_len(entry: Reference) -> bytes:
         raise ValueError(msg)
 
     # serialise the reference length into a single byte
-    byte_array = (reference_len).to_bytes(reference_len, byteorder="big", signed=False)  # type: ignore
+    byte_array = (reference_len).to_bytes(reference_len, byteorder="big", signed=False)
     # Remove leading and trailing zeros
     return bytearray(byte_array.strip(b"\x00"))
 

@@ -1,6 +1,6 @@
 from typing import Callable, Optional, Union
 
-from eth_utils import keccak  # type: ignore
+from eth_utils import keccak
 from pydantic import BaseModel, ConfigDict, Field
 
 from mantaray_py.types import Reference, get_random_values
@@ -30,7 +30,7 @@ class IndexBytes(BaseModel):
         """Check if a byte is present."""
         return (self.bytes_data[byte // 8] >> byte % 8) & 1 > 0
 
-    def foreach(self, hook: Callable[[int], None]) -> None:
+    def for_each(self, hook: Callable[[int], None]) -> None:
         """Iterate through the indexed byte values."""
         for i in range(256):
             if self.check_byte_present(i):
@@ -181,7 +181,7 @@ def encrypt_decrypt(
         encryption_chunk = data[i:encryption_chunk_end_index]
         for j in range(len(encryption_chunk)):
             encryption_chunk[j] ^= key[j % len(key)]
-        data[i:encryption_chunk_end_index] = encryption_chunk  # type: ignore
+        data[i:encryption_chunk_end_index] = encryption_chunk
     return data
 
 
@@ -205,7 +205,7 @@ def keccak256_hash(*messages: Union[str, bytes, bytearray]) -> bytes:
             raise TypeError(msg)
         combined += message
 
-    return keccak(combined)  # type: ignore
+    return keccak(combined)
 
 
 def gen_32_bytes() -> bytes:
