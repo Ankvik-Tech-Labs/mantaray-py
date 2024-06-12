@@ -480,7 +480,7 @@ class MantarayNode(BaseModel):
 
         bytes_data = b"".join(
             [
-                self.__obfuscation_key,
+                self.__obfuscation_key,  # type: ignore
                 version_bytes,
                 reference_len_bytes,
                 self.__entry,
@@ -491,7 +491,7 @@ class MantarayNode(BaseModel):
 
         # Encryption
         # perform XOR encryption on bytes after obfuscation key
-        encrypt_decrypt(self.__obfuscation_key, bytes_data, len(self.__obfuscation_key))
+        encrypt_decrypt(self.__obfuscation_key, bytes_data, len(self.__obfuscation_key))  # type:ignore
 
         return bytes_data
 
