@@ -54,7 +54,8 @@ class MantarayFork(BaseModel):
 
     def serialise(self) -> bytes:
         node_type = self.node.get_type()
-        prefix_len_bytes: bytes = len(self.prefix).to_bytes()  # type: ignore
+        # * Bytes of len 1 & in big endian. Have to specify for python <= 3.10
+        prefix_len_bytes: bytes = len(self.prefix).to_bytes(1, "big")
         node_fork_sizes: NodeForkSizes = NodeForkSizes()
 
         prefix_bytes = bytearray(node_fork_sizes.prefix_max_size)
@@ -272,7 +273,7 @@ class MantarayNode(BaseModel):
         if self.is_dirty() and not self.forks:
             self.forks = {}
 
-        if not self.forks:
+        if self.forks is None:
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
@@ -335,7 +336,7 @@ class MantarayNode(BaseModel):
         Retrieves a MantarayFork under the given path.
 
         Parameters:
-        - path (list[int]): A list representing the path in bytes.
+        - path (bytes): The path in bytes.
 
         Returns:
         Optional[MantarayFork]: The MantarayFork object with the last unique prefix and its node, or None if not found.
@@ -366,7 +367,7 @@ class MantarayNode(BaseModel):
         Removes a path from the node.
 
         Parameters:
-        - path (List[int]): A list representing the path in bytes.
+        - path (bytes): The path in bytes.
         """
         if not path:
             msg = "Path is empty"
