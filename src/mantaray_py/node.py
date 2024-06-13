@@ -13,7 +13,7 @@ from mantaray_py.types import (
     StorageLoader,
     StorageSaver,
 )
-from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes
+from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes,flatten_bytes_array
 
 install()
 
@@ -42,12 +42,15 @@ class MantarayFork(BaseModel):
     def __create_metadata_padding(metadata_size_with_size: int) -> bytes:
         # can be done as bytes(0) as well
         padding = b""
+        node_headers_sizes: NodeHeaderSizes = NodeHeaderSizes()
 
-        if metadata_size_with_size < NodeHeaderSizes.obfuscation_key:
-            padding_len = NodeHeaderSizes.obfuscation_key - metadata_size_with_size
+        if metadata_size_with_size < node_headers_sizes.obfuscation_key:
+            padding_len = node_headers_sizes.obfuscation_key - metadata_size_with_size
             padding = bytes([PADDING_BYTE] * padding_len)
-        elif metadata_size_with_size > NodeHeaderSizes.obfuscation_key:
-            padding_len = NodeHeaderSizes.obfuscation_key - (metadata_size_with_size % NodeHeaderSizes.obfuscation_key)
+        elif metadata_size_with_size > node_headers_sizes.obfuscation_key:
+            padding_len = node_headers_sizes.obfuscation_key - (
+                metadata_size_with_size % node_headers_sizes.obfuscation_key
+            )
             padding = bytes([PADDING_BYTE] * padding_len)
 
         return padding
@@ -409,7 +412,7 @@ class MantarayNode(BaseModel):
         - Reference: Reference of the top manifest node.
         """
         result = self.__recursive_save(storage_saver)
-        return result["reference"]
+        return result.get("reference")
 
     def is_dirty(self) -> bool:
         """
@@ -458,26 +461,35 @@ class MantarayNode(BaseModel):
         index_bytes = index.get_bytes()
 
         # Forks
-        fork_serializations: bytearray = bytearray([])
+        fork_serialisations: bytearray = bytearray([])
+        #index.for_each(lambda byte: fork_serialisations.append(self.forks[int(byte)].serialise()))
 
-        def process_byte(byte: int) -> None:
-            byte_index = int(byte)
-            fork = self.forks.get(byte_index)  # type: ignore
+        for byte in range(256):
+            byte = int(byte)
+            if index.check_byte_present(byte):
+                fork = self.forks.get(byte)
+                if fork is None:
+                    raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
+                fork_serialisations += bytearray(fork.serialise())
 
-            if fork is None:
-                msg = f"Fork indexing error: fork has not found under {byte!r} index"
-                raise ValueError(msg)
-            else:
-                fork_serializations.append(fork.serialise())
+        # def process_byte(byte: int) -> None:
+        #     byte_index = int(byte)
+        #     fork = self.forks.get(byte_index)  # type: ignore
 
-        index.for_each(process_byte)
+        #     if fork is None:
+        #         msg = f"Fork indexing error: fork has not found under {byte!r} index"
+        #         raise ValueError(msg)
+            
+        #     fork_serialisations += bytearray(fork.serialise())
+
+        # index.for_each(process_byte)
 
         # print(f"{list(bytearray(self.__obfuscation_key))=}")
         # print(f"{list(bytearray(version_bytes))=}")
         # print(f"{list(bytearray(reference_len_bytes))=}")
         # print(f"{list(bytearray(self.__entry))=}")
         # print(f"{list(bytearray(index_bytes))=}")
-        # print(f"{list(bytearray(fork_serializations))=}")
+        # print(f"{list(bytearray(fork_serialisations))=}")
 
         bytes_data = b"".join(
             [
@@ -486,7 +498,7 @@ class MantarayNode(BaseModel):
                 reference_len_bytes,
                 self.__entry,
                 index_bytes,
-                *fork_serializations,
+                flatten_bytes_array(fork_serialisations),
             ]
         )
 
@@ -594,7 +606,7 @@ class MantarayNode(BaseModel):
             msg = "Wrong mantaray version"
             raise ValueError(msg)
 
-    def __recursive_save(self, storage_saver: StorageSaver) -> dict[str, Reference]:
+    def __recursive_save(self, storage_saver: StorageSaver) -> dict:
         """
         Recursively saves the node and its forks.
 
@@ -602,22 +614,29 @@ class MantarayNode(BaseModel):
         - StorageSaver (StorageSaver): An instance of StorageSaver responsible for saving data.
 
         Returns:
-        - dict[str, Reference]: A dictionary containing the reference of the top manifest node and a
+        - dict: A dictionary containing the reference of the top manifest node and a
         flag indicating if the node was changed.
         """
-        if not self.forks:
-            msg = "Node has no forks"
-            raise ValueError(msg)
+        # * Save forks first recursively
+        save_returns = []
 
-        out = {}
+        # * There was no intention to define fork(s)
+        if self.forks is None:
+            self.forks = {}
+
         for fork in self.forks.values():
-            out.update(fork.node.__recursive_save(storage_saver))
+            save_returns.append(fork.node.__recursive_save(storage_saver))
 
-        serialised_data = self.serialise()
-        ref = storage_saver(serialised_data, {})
-        self.set_content_address(ref)
-        out["reference"] = ref
-        return out
+        if self.__content_address and all(not v["changed"] for v in save_returns):
+            return {"reference": self.__content_address, "changed": False}
+
+        # Save the actual manifest as well
+        data = self.serialise()
+        reference = storage_saver(data)
+
+        self.set_content_address(reference)
+
+        return {"reference": reference, "changed": True}
 
 
 class RecursiveSaveReturnType(BaseModel):

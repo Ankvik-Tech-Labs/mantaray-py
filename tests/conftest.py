@@ -70,7 +70,7 @@ def bee_url(bee_api_url) -> str:
     return bee_api_url
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def bee_class(bee_url) -> Bee:
     return Bee(bee_url)
 
@@ -110,7 +110,7 @@ def request_debug_postage_stamp(bee_debug_ky_options) -> BatchId:
         try:
             usable = get_postage_batch(bee_debug_ky_options, stamp).usable
         except requests.exceptions.HTTPError:
-            sleep(5)
+            sleep(3)
         if usable:
             break
     print(f"[*]Valid Postage found: {stamp}")
@@ -127,10 +127,10 @@ def get_cache_debug_postage_stamp(request, bee_debug_ky_options) -> BatchId:
     return stamp
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def get_debug_postage() -> BatchId:
     print("[*]Getting Debug Postage....")
-    return "413a6f2b6787a04e8d8514b8fc82d8eb4743c3e582c044e6d722ec0f39a02a28"
+    return "03f51c222c985f3b3634861315741c6ad4edd7dee5b87e55c27ef42d97f8aeb9"
     return get_cache_debug_postage_stamp
 
 

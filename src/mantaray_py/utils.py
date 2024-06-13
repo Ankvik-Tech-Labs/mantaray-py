@@ -121,17 +121,17 @@ def flatten_bytes_array(bytes_array: bytearray) -> bytes:
     Returns:
         bytes: A flattened byte array.
     """
-    if len(bytes_array) == 0:
-        return b""
+    # if len(bytes_array) == 0:
+    #     return b""
 
-    bytes_length = sum(len(v) for v in bytes_array)  # type: ignore
-    flatten_bytes = bytearray(bytes_length)
-    next_write_index = 0
-    for b in bytes_array:
-        flatten_bytes = bytearray(overwrite_bytes(flatten_bytes, b, next_write_index))  # type: ignore
-        next_write_index += len(b)  # type: ignore
+    # bytes_length = len(bytes_array)
+    # flatten_bytes = bytearray(bytes_length)
+    # next_write_index = 0
+    # for b in bytes_array:
+    #     flatten_bytes = bytearray(overwrite_bytes(flatten_bytes, b, next_write_index))  # type: ignore
+    #     next_write_index += len(b)  # type: ignore
 
-    return bytes(flatten_bytes)
+    return bytes(bytes_array)
 
 
 def equal_bytes(a: bytes, b: bytes) -> bool:

@@ -141,7 +141,7 @@ ban-relative-imports = "all"
 
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/mantaray_py/ --cov-report=term-missing"
+addopts = "--cov=src/mantaray_py/ --cov-report=term-missing -p no:ape_test"
 
 
 [tool.coverage.run]
