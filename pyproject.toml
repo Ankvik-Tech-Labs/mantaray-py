@@ -235,7 +235,8 @@ dependencies = [
   "pytest",
   "pytest-cov",
   "rich",
-  "swarm-bee-py"
+  "swarm-bee-py",
+  "pytest-asyncio"
 ]
 
 [tool.hatch.envs.test.scripts]
