@@ -4,18 +4,19 @@ import pytest
 from typing import Callable
 from bee_py.bee import Bee
 from bee_py.types.type import Data, REFERENCE_HEX_LENGTH
-from ..conftest import bee_class 
+from rich.console import Console
 
 from bee_py.utils.hex import bytes_to_hex, hex_to_bytes
 
 from mantaray_py import Reference, MantarayNode
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-
+console =  Console()
 
 def create_save_function(bee_class: Bee, get_debug_postage: str) -> Callable[[bytes], bytes]:
     def save_function(data: bytes) -> bytes:
         hex_reference = bee_class.upload_data(get_debug_postage, data)
+        console.print(f"{str(hex_reference.reference)=}")
         return hex_to_bytes(str(hex_reference.reference))
     return save_function
 
@@ -39,7 +40,7 @@ def bee_test_page_manifest_data(get_debug_postage: str, bee_class: Bee) -> Data:
     # * Only download its manifest
     return bee_class.download_data(str(upload_result.reference))
 
-async def upload_file(file_path: str, get_debug_postage: str, bee_class: Bee):
+async def upload_file(file_path: str, get_debug_postage: str, bee_class: Bee) -> str:
     """
     Read the file in raw bytes
     """
@@ -51,7 +52,7 @@ async def upload_file(file_path: str, get_debug_postage: str, bee_class: Bee):
 @pytest.mark.asyncio
 async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_postage):
     test_dir = PROJECT_DIR / "data" / "testpage"
-    upload_result = bee_class.upload_files_from_directory(get_debug_postage, PROJECT_DIR, {"pin": True, "indexDocument": "index.html"})
+    upload_result = bee_class.upload_files_from_directory(get_debug_postage, test_dir, {"pin": True, "indexDocument": "index.html"})
 
     index_html_path = test_dir / "index.html"
     image_path = test_dir / "img" / "icon.png"
@@ -62,6 +63,7 @@ async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_pos
         upload_file(image_path, get_debug_postage, bee_class),
         upload_file(text_path, get_debug_postage, bee_class)
     )
+    # console.log(index_reference, image_reference, text_reference)
 
     i_node = MantarayNode()
     i_node.add_fork("index.html".encode(), hex_to_bytes(index_reference), {"Content-Type": "text/html; charset=utf-8","Filename": "index.html"})
@@ -73,8 +75,7 @@ async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_pos
     save_function = create_save_function(bee_class, get_debug_postage)
     i_node_ref = i_node.save(save_function)
 
-    #assert str(upload_result.reference) == "e9d46950cdb17e15d0b3712bcb325724a3107560143d65a7acd00ea781eb9cd7"
-    assert len(upload_result.reference) == REFERENCE_HEX_LENGTH
+    assert str(upload_result.reference) == "e9d46950cdb17e15d0b3712bcb325724a3107560143d65a7acd00ea781eb9cd7"
 
     assert bytes_to_hex(i_node_ref) == upload_result.reference.value
 

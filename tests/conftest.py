@@ -128,9 +128,9 @@ def get_cache_debug_postage_stamp(request, bee_debug_ky_options) -> BatchId:
 
 
 @pytest.fixture(autouse=True)
-def get_debug_postage() -> BatchId:
+def get_debug_postage(get_cache_debug_postage_stamp) -> BatchId:
     print("[*]Getting Debug Postage....")
-    return "03f51c222c985f3b3634861315741c6ad4edd7dee5b87e55c27ef42d97f8aeb9"
+    #return "f51d93f4317c30754b16717d6f85e8ddad968c8b1d536beafe37acfb57f23341"
     return get_cache_debug_postage_stamp
 
 

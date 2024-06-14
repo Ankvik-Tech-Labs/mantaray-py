@@ -13,7 +13,7 @@ from mantaray_py.types import (
     StorageLoader,
     StorageSaver,
 )
-from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes,flatten_bytes_array
+from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes, flatten_bytes_array
 
 install()
 
@@ -462,7 +462,7 @@ class MantarayNode(BaseModel):
 
         # Forks
         fork_serialisations: bytearray = bytearray([])
-        #index.for_each(lambda byte: fork_serialisations.append(self.forks[int(byte)].serialise()))
+        # index.for_each(lambda byte: fork_serialisations.append(self.forks[int(byte)].serialise()))
 
         for byte in range(256):
             byte = int(byte)
@@ -479,7 +479,7 @@ class MantarayNode(BaseModel):
         #     if fork is None:
         #         msg = f"Fork indexing error: fork has not found under {byte!r} index"
         #         raise ValueError(msg)
-            
+
         #     fork_serialisations += bytearray(fork.serialise())
 
         # index.for_each(process_byte)
