@@ -113,4 +113,4 @@ ENV/
 
 # ruff
 .ruff_cache/
-_verion.py
+_version.py

@@ -462,27 +462,26 @@ class MantarayNode(BaseModel):
 
         # Forks
         fork_serialisations: bytearray = bytearray([])
-        # index.for_each(lambda byte: fork_serialisations.append(self.forks[int(byte)].serialise()))
 
-        for byte in range(256):
-            byte = int(byte)
-            if index.check_byte_present(byte):
-                fork = self.forks.get(byte)
-                if fork is None:
-                    raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
-                fork_serialisations += bytearray(fork.serialise())
+        # for byte in range(256):
+        #     byte = int(byte)
+        #     if index.check_byte_present(byte):
+        #         fork = self.forks.get(byte)
+        #         if fork is None:
+        #             raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
+        #         fork_serialisations += bytearray(fork.serialise())
 
-        # def process_byte(byte: int) -> None:
-        #     byte_index = int(byte)
-        #     fork = self.forks.get(byte_index)  # type: ignore
+        def process_byte(byte: int) -> None:
+            byte_index = int(byte)
+            fork = self.forks.get(byte_index)  # type: ignore
 
-        #     if fork is None:
-        #         msg = f"Fork indexing error: fork has not found under {byte!r} index"
-        #         raise ValueError(msg)
+            if fork is None:
+                msg = f"Fork indexing error: fork has not found under {byte!r} index"
+                raise ValueError(msg)
 
-        #     fork_serialisations += bytearray(fork.serialise())
+            fork_serialisations += bytearray(fork.serialise())
 
-        # index.for_each(process_byte)
+        index.for_each(process_byte)
 
         # print(f"{list(bytearray(self.__obfuscation_key))=}")
         # print(f"{list(bytearray(version_bytes))=}")
@@ -628,12 +627,15 @@ class MantarayNode(BaseModel):
             save_returns.append(fork.node.__recursive_save(storage_saver))
 
         if self.__content_address and all(not v["changed"] for v in save_returns):
+            data = {"reference": self.__content_address.hex(), "changed": False}
+            print(f"1--->{data}")
             return {"reference": self.__content_address, "changed": False}
 
         # Save the actual manifest as well
         data = self.serialise()
         reference = storage_saver(data)
-
+        data2 = {"reference": reference.hex(), "changed": True}
+        print(f"2-->{data2}")
         self.set_content_address(reference)
 
         return {"reference": reference, "changed": True}

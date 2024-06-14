@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from typing import Callable
 from bee_py.bee import Bee
-from bee_py.types.type import Data, REFERENCE_HEX_LENGTH
+from bee_py.types.type import Data
 from rich.console import Console
 
 from bee_py.utils.hex import bytes_to_hex, hex_to_bytes
@@ -16,7 +16,8 @@ console =  Console()
 def create_save_function(bee_class: Bee, get_debug_postage: str) -> Callable[[bytes], bytes]:
     def save_function(data: bytes) -> bytes:
         hex_reference = bee_class.upload_data(get_debug_postage, data)
-        console.print(f"{str(hex_reference.reference)=}")
+        # console.print(f"{str(hex_reference.reference)=}")
+        console.print(f"{bytes_to_hex(data)=}")
         return hex_to_bytes(str(hex_reference.reference))
     return save_function
 
