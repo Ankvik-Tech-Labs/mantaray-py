@@ -15,9 +15,9 @@ console =  Console()
 
 def create_save_function(bee_class: Bee, get_debug_postage: str) -> Callable[[bytes], bytes]:
     def save_function(data: bytes) -> bytes:
+        console.print(f"{bytes_to_hex(data)=}")
         hex_reference = bee_class.upload_data(get_debug_postage, data)
         # console.print(f"{str(hex_reference.reference)=}")
-        console.print(f"{bytes_to_hex(data)=}")
         return hex_to_bytes(str(hex_reference.reference))
     return save_function
 
@@ -79,5 +79,3 @@ async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_pos
     assert str(upload_result.reference) == "e9d46950cdb17e15d0b3712bcb325724a3107560143d65a7acd00ea781eb9cd7"
 
     assert bytes_to_hex(i_node_ref) == upload_result.reference.value
-
-    

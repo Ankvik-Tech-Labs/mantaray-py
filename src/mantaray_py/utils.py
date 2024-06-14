@@ -169,7 +169,7 @@ def encrypt_decrypt(
         bytes
     """
     if key == bytes(BYTES_LENGTH):
-        return None
+        return data
 
     if end_index is None:
         end_index = len(data)

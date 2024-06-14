@@ -463,25 +463,13 @@ class MantarayNode(BaseModel):
         # Forks
         fork_serialisations: bytearray = bytearray([])
 
-        # for byte in range(256):
-        #     byte = int(byte)
-        #     if index.check_byte_present(byte):
-        #         fork = self.forks.get(byte)
-        #         if fork is None:
-        #             raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
-        #         fork_serialisations += bytearray(fork.serialise())
-
-        def process_byte(byte: int) -> None:
-            byte_index = int(byte)
-            fork = self.forks.get(byte_index)  # type: ignore
-
-            if fork is None:
-                msg = f"Fork indexing error: fork has not found under {byte!r} index"
-                raise ValueError(msg)
-
-            fork_serialisations += bytearray(fork.serialise())
-
-        index.for_each(process_byte)
+        for byte in range(256):
+            byte = int(byte)
+            if index.check_byte_present(byte):
+                fork = self.forks.get(byte)
+                if fork is None:
+                    raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
+                fork_serialisations += bytearray(fork.serialise())
 
         # print(f"{list(bytearray(self.__obfuscation_key))=}")
         # print(f"{list(bytearray(version_bytes))=}")
@@ -503,7 +491,9 @@ class MantarayNode(BaseModel):
 
         # Encryption
         # perform XOR encryption on bytes after obfuscation key
-        encrypt_decrypt(self.__obfuscation_key, bytes_data, len(self.__obfuscation_key))  # type:ignore
+        bytes_data = encrypt_decrypt(self.__obfuscation_key, bytes_data, len(self.__obfuscation_key))  # type:ignore
+
+        # print(f"{list(bytearray(bytes_data))=}")
 
         return bytes_data
 
