@@ -1,6 +1,6 @@
 import json
 from typing import Any, Optional, Union
-
+import re
 from eth_utils import keccak
 from pydantic import BaseModel, ConfigDict
 from rich.traceback import install
@@ -37,6 +37,11 @@ class MantarayFork(BaseModel):
 
     prefix: bytes
     node: "MantarayNode"
+
+    def __eq__(self, other):
+        if not isinstance(other, MantarayFork):
+            return False
+        return self.prefix == other.prefix and self.node == other.node
 
     @staticmethod
     def __create_metadata_padding(metadata_size_with_size: int) -> bytes:
@@ -139,6 +144,23 @@ class MantarayNode(BaseModel):
     forks: Optional[ForkMapping] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __eq__(self, other):
+        if not isinstance(other, MantarayNode):
+            return False
+
+        # Check if forks are the same length
+        if len(self.forks) != len(other.forks):
+            return False
+
+        # Compare each fork
+        for key in self.forks:
+            if key not in other.forks:
+                return False
+            if self.forks[key] != other.forks[key]:
+                return False
+
+        return True
 
     def set_content_address(self, content_address: Reference) -> None:
         check_reference(content_address)
@@ -496,6 +518,7 @@ class MantarayNode(BaseModel):
         # print(f"{list(bytearray(bytes_data))=}")
 
         return bytes_data
+        return remove_space_and_add_newlines(bytes_data)
 
     def deserialise(self, data: bytes) -> None:
         """
@@ -504,96 +527,63 @@ class MantarayNode(BaseModel):
         Parameters:
         - data (bytes): Byte array representation of the node.
         """
-        node_header_sizes: NodeHeaderSizes = NodeHeaderSizes()
-        node_header_size: int = node_header_sizes.full
+        node_header_sizes = NodeHeaderSizes()
+        node_header_size = node_header_sizes.full
 
         if len(data) < node_header_size:
-            msg = "The serialised input is too short"
-            raise ValueError(msg)
+            raise ValueError("The serialised input is too short")
 
-        self.__obfuscation_key = data[: node_header_sizes.obfuscation_key]
-        # * perform XOR decryption on bytes after obfuscation key
+        self.__obfuscation_key = data[:node_header_sizes.obfuscation_key]
         data = encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))
 
-        version_hash = data[
-            node_header_sizes.obfuscation_key : node_header_sizes.obfuscation_key + node_header_sizes.version_hash
-        ]
-        # print(f"{list(version_hash)=}")
+        version_hash = data[node_header_sizes.obfuscation_key:node_header_sizes.obfuscation_key + node_header_sizes.version_hash]
 
         if equal_bytes(version_hash, serialise_version("0.1")):
             raise NotImplementedError()
         elif equal_bytes(version_hash, serialise_version("0.2")):
             ref_bytes_size = data[node_header_size - 1]
-            entry = data[node_header_size : node_header_size + ref_bytes_size]
+            entry = data[node_header_size:node_header_size + ref_bytes_size]
 
-            # FIXME: in Bee. if one uploads a file on the bzz endpoint, the node under `/` gets 0 refsize
             if ref_bytes_size == 0:
                 entry = bytes(32)
             self.__entry = entry
             offset = node_header_size + ref_bytes_size
-            index_bytes = data[offset : offset + 32]
+            index_bytes = data[offset:offset + 32]
 
-            # Currently we don't persist the root nodeType when we marshal the manifest, as a result
-            # the root nodeType information is lost on Unmarshal. This causes issues when we want to
-            # perform a path 'Walk' on the root. If there is at least 1 fork, the root node type
-            # is an edge, so we will deduce this information from index byte array
             if not equal_bytes(index_bytes, bytes(32)):
                 self.__make_edge()
             self.forks = {}
-            index_forks: IndexBytes = IndexBytes()
+            index_forks = IndexBytes()
             index_forks.set_bytes(bytearray(index_bytes))
             offset += 32
-            node_fork_sizes: NodeForkSizes = NodeForkSizes()
+            node_fork_sizes = NodeForkSizes()
 
-            def process_byte(byte: int) -> None:
-                # Use nonlocal to modify the offset in the outer scope
-                nonlocal offset
-                # print(f"Processing byte: {byte}")
+            for byte in range(256):
+                if index_forks.check_byte_present(byte):
+                    if len(data) < offset + node_fork_sizes.node_type:
+                        raise ValueError(f"There is not enough size to read nodeType of fork at offset {offset}")
 
-                if len(data) < offset + node_fork_sizes.node_type:
-                    # print(f"Data Length: {len(data)}, Offset: {offset}, Node Fork Size: {node_fork_sizes.node_type}")
-                    msg = f"There is not enough size to read nodeType of fork at offset {offset}"
-                    raise ValueError(msg)
+                    node_type = data[offset:offset + node_fork_sizes.node_type]
+                    node_fork_size = node_fork_sizes.pre_reference + ref_bytes_size
 
-                node_type = data[offset : offset + node_fork_sizes.node_type]
-                node_fork_size = node_fork_sizes.pre_reference + ref_bytes_size
+                    if node_type_is_with_metadata_type(node_type[0]):
+                        if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size + node_fork_sizes.metadata:
+                            raise ValueError(f"Not enough bytes for metadata node fork at byte {byte}")
 
-                if node_type_is_with_metadata_type(node_type[0]):
-                    if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size + node_fork_sizes.metadata:
-                        msg = f"Not enough bytes for metadata node fork at byte {byte}"
-                        raise ValueError(msg)
+                        metadata_byte_size = int.from_bytes(data[offset + node_fork_size:offset + node_fork_size + node_fork_sizes.metadata], byteorder="big")
+                        node_fork_size += node_fork_sizes.metadata + metadata_byte_size
 
-                    metadata_byte_size = int.from_bytes(
-                        data[offset + node_fork_size : offset + node_fork_size + node_fork_sizes.metadata],
-                        byteorder="big",
-                    )
-                    node_fork_size += node_fork_sizes.metadata + metadata_byte_size
+                        fork = MantarayFork.deserialise(data[offset:offset + node_fork_size], self.__obfuscation_key, {"with_metadata": {"ref_bytes_size": ref_bytes_size, "metadata_byte_size": metadata_byte_size}})
+                    else:
+                        if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size:
+                            raise ValueError(f"There is not enough size to read fork at offset {offset}")
 
-                    fork = MantarayFork.deserialise(
-                        data[offset : offset + node_fork_size],
-                        self.__obfuscation_key,  # type: ignore
-                        {
-                            "with_metadata": {
-                                "ref_bytes_size": ref_bytes_size,
-                                "metadata_byte_size": metadata_byte_size,
-                            },
-                        },
-                    )
-                else:
-                    if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size:
-                        msg = f"There is not enough size to read fork at offset {offset}"
-                        raise ValueError(msg)
+                        fork = MantarayFork.deserialise(data[offset:offset + node_fork_size], self.__obfuscation_key)
 
-                    fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)  # type: ignore
-
-                self.forks[byte] = fork  # type: ignore
-
-                offset += node_fork_size
-
-            index_forks.for_each(process_byte)
+                    self.forks[byte] = fork
+                    offset += node_fork_size
         else:
-            msg = "Wrong mantaray version"
-            raise ValueError(msg)
+            raise ValueError("Wrong mantaray version")
 
     def __recursive_save(self, storage_saver: StorageSaver) -> dict:
         """
@@ -617,15 +607,11 @@ class MantarayNode(BaseModel):
             save_returns.append(fork.node.__recursive_save(storage_saver))
 
         if self.__content_address and all(not v["changed"] for v in save_returns):
-            data = {"reference": self.__content_address.hex(), "changed": False}
-            print(f"1--->{data}")
             return {"reference": self.__content_address, "changed": False}
 
         # Save the actual manifest as well
         data = self.serialise()
         reference = storage_saver(data)
-        data2 = {"reference": reference.hex(), "changed": True}
-        print(f"2-->{data2}")
         self.set_content_address(reference)
 
         return {"reference": reference, "changed": True}
@@ -769,8 +755,8 @@ def load_all_nodes(storage_loader: StorageLoader, node: MantarayNode) -> None:
         return
 
     for fork in node.forks.values():
-        if hasattr(fork.node, "get_entry"):
-            fork.node.load(storage_loader, fork.node.get_entry)
+        if fork.node.get_entry():
+            fork.node.load(storage_loader, fork.node.get_entry())
         load_all_nodes(storage_loader, fork.node)
 
 
@@ -835,3 +821,31 @@ def equal_nodes(a: MantarayNode, b: MantarayNode, accumulated_prefix: str = "") 
             raise ValueError(msg)
 
         equal_nodes(a_fork["node"], b_fork["node"], accumulated_prefix + prefix_string)
+
+
+def remove_space_and_add_newlines(byte_data: bytes) -> bytes:
+    """
+    Process JSON-like byte data by replacing spaces after colons with newlines and adding newlines after closing braces following a quotation mark.
+
+    Parameters:
+    - data: Byte data to process.
+
+    Returns:
+    - Processed byte data.
+    """
+    # Pattern to identify JSON-like strings
+    json_pattern = re.compile(rb'\{[^\{\}]*\}')
+
+    # Function to process each match
+    def process_match(match):
+        json_bytes = match.group()
+        # Remove spaces after colons
+        fixed_json_bytes = re.sub(rb':\s+', b':', json_bytes)
+        # Add newlines after each closing brace `}` that follows a quote `"`
+        fixed_json_bytes_with_newlines = re.sub(rb'("\})', rb'\1\n', fixed_json_bytes)
+        return fixed_json_bytes_with_newlines
+
+    # Replace each JSON-like match in the byte_data
+    fixed_byte_data = json_pattern.sub(process_match, byte_data)
+
+    return fixed_byte_data

@@ -26,7 +26,7 @@ def get_sample_mantaray_node() -> dict[MantarayNode, bytes]:
         "path1/valami/masodik",
         "path1/valami/masodik.ext",
         "path1/valami",
-        "path2"
+        "path2",
     ]
 
     for path in paths:
@@ -116,6 +116,7 @@ def request_debug_postage_stamp(bee_debug_ky_options) -> BatchId:
     print(f"[*]Valid Postage found: {stamp}")
     return stamp
 
+
 @pytest.fixture
 def get_cache_debug_postage_stamp(request, bee_debug_ky_options) -> BatchId:
     stamp = request.config.cache.get("debug_postage_stamp", None)
@@ -130,7 +131,7 @@ def get_cache_debug_postage_stamp(request, bee_debug_ky_options) -> BatchId:
 @pytest.fixture(autouse=True)
 def get_debug_postage(get_cache_debug_postage_stamp) -> BatchId:
     print("[*]Getting Debug Postage....")
-    #return "f51d93f4317c30754b16717d6f85e8ddad968c8b1d536beafe37acfb57f23341"
+    # return "f51d93f4317c30754b16717d6f85e8ddad968c8b1d536beafe37acfb57f23341"
     return get_cache_debug_postage_stamp
 
 

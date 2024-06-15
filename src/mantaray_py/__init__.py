@@ -5,7 +5,7 @@ from typing import Optional
 
 from rich.traceback import install
 
-from mantaray_py.node import MantarayNode, check_for_separator, equal_nodes
+from mantaray_py.node import MantarayNode, check_for_separator, equal_nodes, load_all_nodes
 from mantaray_py.types.types import (
     MetadataMapping,
     NodeType,
@@ -43,6 +43,7 @@ __all__ = [
     "gen_32_bytes",
     "keccak256_hash",
     "marshal_version_values",
+    "load_all_nodes"
 ]
 
 
