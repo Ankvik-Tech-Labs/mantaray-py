@@ -255,7 +255,7 @@ class MantarayNode(BaseModel):
         Adds a fork to the current node based on the provided path, entry, and metadata.
 
         Parameters:
-        - path (List[int]): A list representing the path in bytes. Can be empty, in which case `entry`
+        - path (list[int]): A list representing the path in bytes. Can be empty, in which case `entry`
         will be set as the current node's entry.
         - entry (Reference): The entry to be associated with the fork.
         - metadata (Dict[str, Any], optional): Additional metadata to associate with the fork.
@@ -513,7 +513,7 @@ class MantarayNode(BaseModel):
 
         self.__obfuscation_key = data[: node_header_sizes.obfuscation_key]
         # * perform XOR decryption on bytes after obfuscation key
-        encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))
+        data = encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))
 
         version_hash = data[
             node_header_sizes.obfuscation_key : node_header_sizes.obfuscation_key + node_header_sizes.version_hash

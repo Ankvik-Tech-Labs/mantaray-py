@@ -69,7 +69,7 @@ async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_pos
     i_node = MantarayNode()
     i_node.add_fork("index.html".encode(), hex_to_bytes(index_reference), {"Content-Type": "text/html; charset=utf-8","Filename": "index.html"})
     i_node.add_fork("img/icon.png.txt".encode(), hex_to_bytes(text_reference), {"Content-Type": "", "Filename": "icon.png.txt"})
-    i_node.add_fork("index.html".encode(), hex_to_bytes(image_reference), {"Content-Type": "image/png","Filename": "img/icon.png"})
+    i_node.add_fork("img/icon.png".encode(), hex_to_bytes(image_reference), {"Content-Type": "image/png","Filename": "icon.png"})
     i_node.add_fork("/".encode(), bytes(32), {"website-index-document": "index.html"})
     # pytest.set_trace()
 
