@@ -42,8 +42,8 @@ __all__ = [
     "flatten_bytes_array",
     "gen_32_bytes",
     "keccak256_hash",
+    "load_all_nodes",
     "marshal_version_values",
-    "load_all_nodes"
 ]
 
 

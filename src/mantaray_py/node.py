@@ -1,6 +1,7 @@
 import json
-from typing import Any, Optional, Union
 import re
+from typing import Any, Optional, Union
+
 from eth_utils import keccak
 from pydantic import BaseModel, ConfigDict
 from rich.traceback import install
@@ -295,7 +296,7 @@ class MantarayNode(BaseModel):
             self.make_dirty()
             return
 
-        if self.is_dirty() and not self.forks:
+        if self.is_dirty() and self.forks is None:
             self.forks = {}
 
         if self.forks is None:
@@ -371,7 +372,8 @@ class MantarayNode(BaseModel):
         """
         if not path:
             raise EmptyPathError()
-        if not self.forks:
+        print(f"{self.forks=}")
+        if self.forks is None:
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
@@ -397,7 +399,7 @@ class MantarayNode(BaseModel):
         if not path:
             msg = "Path is empty"
             raise ValueError(msg)
-        if not self.forks:
+        if self.forks is None:
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
@@ -461,7 +463,7 @@ class MantarayNode(BaseModel):
         if not self.__obfuscation_key:
             self.set_obfuscation_key(bytes(32))
             # self.set_obfuscation_key(
-        if not self.forks:
+        if self.forks is None:
             if not self.__entry:
                 msg = "Entry"
                 raise UndefinedFieldError(msg)
@@ -533,22 +535,24 @@ class MantarayNode(BaseModel):
         if len(data) < node_header_size:
             raise ValueError("The serialised input is too short")
 
-        self.__obfuscation_key = data[:node_header_sizes.obfuscation_key]
+        self.__obfuscation_key = data[: node_header_sizes.obfuscation_key]
         data = encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))
 
-        version_hash = data[node_header_sizes.obfuscation_key:node_header_sizes.obfuscation_key + node_header_sizes.version_hash]
+        version_hash = data[
+            node_header_sizes.obfuscation_key : node_header_sizes.obfuscation_key + node_header_sizes.version_hash
+        ]
 
         if equal_bytes(version_hash, serialise_version("0.1")):
             raise NotImplementedError()
         elif equal_bytes(version_hash, serialise_version("0.2")):
             ref_bytes_size = data[node_header_size - 1]
-            entry = data[node_header_size:node_header_size + ref_bytes_size]
+            entry = data[node_header_size : node_header_size + ref_bytes_size]
 
             if ref_bytes_size == 0:
                 entry = bytes(32)
             self.__entry = entry
             offset = node_header_size + ref_bytes_size
-            index_bytes = data[offset:offset + 32]
+            index_bytes = data[offset : offset + 32]
 
             if not equal_bytes(index_bytes, bytes(32)):
                 self.__make_edge()
@@ -563,22 +567,37 @@ class MantarayNode(BaseModel):
                     if len(data) < offset + node_fork_sizes.node_type:
                         raise ValueError(f"There is not enough size to read nodeType of fork at offset {offset}")
 
-                    node_type = data[offset:offset + node_fork_sizes.node_type]
+                    node_type = data[offset : offset + node_fork_sizes.node_type]
                     node_fork_size = node_fork_sizes.pre_reference + ref_bytes_size
 
                     if node_type_is_with_metadata_type(node_type[0]):
-                        if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size + node_fork_sizes.metadata:
+                        if (
+                            len(data)
+                            < offset + node_fork_sizes.pre_reference + ref_bytes_size + node_fork_sizes.metadata
+                        ):
                             raise ValueError(f"Not enough bytes for metadata node fork at byte {byte}")
 
-                        metadata_byte_size = int.from_bytes(data[offset + node_fork_size:offset + node_fork_size + node_fork_sizes.metadata], byteorder="big")
+                        metadata_byte_size = int.from_bytes(
+                            data[offset + node_fork_size : offset + node_fork_size + node_fork_sizes.metadata],
+                            byteorder="big",
+                        )
                         node_fork_size += node_fork_sizes.metadata + metadata_byte_size
 
-                        fork = MantarayFork.deserialise(data[offset:offset + node_fork_size], self.__obfuscation_key, {"with_metadata": {"ref_bytes_size": ref_bytes_size, "metadata_byte_size": metadata_byte_size}})
+                        fork = MantarayFork.deserialise(
+                            data[offset : offset + node_fork_size],
+                            self.__obfuscation_key,
+                            {
+                                "with_metadata": {
+                                    "ref_bytes_size": ref_bytes_size,
+                                    "metadata_byte_size": metadata_byte_size,
+                                }
+                            },
+                        )
                     else:
                         if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size:
                             raise ValueError(f"There is not enough size to read fork at offset {offset}")
 
-                        fork = MantarayFork.deserialise(data[offset:offset + node_fork_size], self.__obfuscation_key)
+                        fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)
 
                     self.forks[byte] = fork
                     offset += node_fork_size
@@ -834,15 +853,15 @@ def remove_space_and_add_newlines(byte_data: bytes) -> bytes:
     - Processed byte data.
     """
     # Pattern to identify JSON-like strings
-    json_pattern = re.compile(rb'\{[^\{\}]*\}')
+    json_pattern = re.compile(rb"\{[^\{\}]*\}")
 
     # Function to process each match
     def process_match(match):
         json_bytes = match.group()
         # Remove spaces after colons
-        fixed_json_bytes = re.sub(rb':\s+', b':', json_bytes)
+        fixed_json_bytes = re.sub(rb":\s+", b":", json_bytes)
         # Add newlines after each closing brace `}` that follows a quote `"`
-        fixed_json_bytes_with_newlines = re.sub(rb'("\})', rb'\1\n', fixed_json_bytes)
+        fixed_json_bytes_with_newlines = re.sub(rb'("\})', rb"\1\n", fixed_json_bytes)
         return fixed_json_bytes_with_newlines
 
     # Replace each JSON-like match in the byte_data

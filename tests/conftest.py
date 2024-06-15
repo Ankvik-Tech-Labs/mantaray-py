@@ -21,21 +21,22 @@ def get_sample_mantaray_node() -> dict[MantarayNode, bytes]:
     random_address = gen_32_bytes()
     node.set_entry(random_address)
 
-    paths = [
-        "path1/valami/elso",
-        "path1/valami/masodik",
-        "path1/valami/masodik.ext",
-        "path1/valami",
-        "path2",
-    ]
+    path1 = 'path1/valami/elso'.encode()
+    path2 = 'path1/valami/masodik'.encode()
+    path3 = 'path1/valami/masodik.ext'.encode()
+    path4 = 'path1/valami'.encode()
+    path5 = 'path2'.encode()
 
-    for path in paths:
-        encoded_path = path.encode()
-        node.add_fork(encoded_path, random_address)
+    # Add forks to the node
+    node.add_fork(path1, random_address, {'vmi': 'elso'})
+    node.add_fork(path2, random_address)
+    node.add_fork(path3, random_address)
+    node.add_fork(path4, random_address, {'vmi': 'negy'})
+    node.add_fork(path5, random_address)
 
     return {
         "node": node,
-        "paths": [path.encode() for path in paths],
+        "paths": [path1, path2, path3, path4, path5],
     }
 
 

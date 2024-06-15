@@ -18,7 +18,7 @@ def create_save_function(
     bee_class:Bee, get_debug_postage:str
 ) -> Callable[[bytes], bytes]:
     def save_function(data:bytes) -> bytes:
-        console.print(f"{bytes_to_hex(data)=}")
+        # console.print(f"{bytes_to_hex(data)=}")
         hex_reference = bee_class.upload_data(get_debug_postage, data)
         # console.print(f"{str(hex_reference.reference)=}")
         return hex_to_bytes(str(hex_reference.reference))
@@ -186,8 +186,6 @@ async def test_construct_manifests_of_testpage_folder(get_debug_postage, bee_cla
     
     # Check Bee manifest is equal to the constructed one
     assert i_node == node
-    
-    # print('Constructed root manifest hash', i_node_ref.hex())
 
 
 def test_remove_fork_then_upload(get_sample_mantaray_node, get_debug_postage, bee_class):
@@ -199,7 +197,6 @@ def test_remove_fork_then_upload(get_sample_mantaray_node, get_debug_postage, be
     save_function = create_save_function(bee_class, get_debug_postage)
     # Save the sample node
     ref_original = node.save(save_function)
-
 
     check_node1 = node.get_fork_at_path(b'path1/valami/').node
     ref_check_node1 = check_node1.get_content_address()
