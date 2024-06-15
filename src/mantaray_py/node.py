@@ -380,6 +380,8 @@ class MantarayNode(BaseModel):
         fork = self.forks.get(path[0])
         if not fork:
             raise NotFoundError(path)
+        
+        print(f"{fork.prefix}=")
 
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
@@ -396,7 +398,7 @@ class MantarayNode(BaseModel):
         Parameters:
         - path (bytes): The path in bytes.
         """
-        if not path:
+        if len(path) == 0:
             msg = "Path is empty"
             raise ValueError(msg)
         if self.forks is None:
@@ -404,7 +406,7 @@ class MantarayNode(BaseModel):
             raise ValueError(msg)
 
         fork = self.forks.get(path[0])
-        if not fork:
+        if fork is None:
             raise NotFoundError(path)
 
         if path.startswith(fork.prefix):
@@ -415,7 +417,7 @@ class MantarayNode(BaseModel):
             else:
                 fork.node.remove_path(rest)
         else:
-            raise NotFoundError(path)
+            raise NotFoundError(path, fork.prefix)
 
     def load(self, storage_loader: StorageLoader, reference: Reference) -> None:
         if not reference:
