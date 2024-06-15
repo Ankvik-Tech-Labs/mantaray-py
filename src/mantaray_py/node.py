@@ -305,7 +305,7 @@ class MantarayNode(BaseModel):
 
         fork = self.forks.get(path[0])
 
-        if not fork:
+        if fork is None:
             new_node: MantarayNode = MantarayNode()
             if self.__obfuscation_key:
                 new_node.set_obfuscation_key(self.__obfuscation_key)
@@ -378,11 +378,10 @@ class MantarayNode(BaseModel):
             raise ValueError(msg)
 
         fork = self.forks.get(path[0])
-        if not fork:
+        # print(f"{path[0]=}")
+        if fork is None:
             raise NotFoundError(path)
         
-        print(f"{fork.prefix}=")
-
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
             if not rest:
@@ -411,9 +410,10 @@ class MantarayNode(BaseModel):
 
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
-            if not rest:
+            if len(rest) == 0:
                 del self.forks[path[0]]
                 self.make_dirty()
+                return
             else:
                 fork.node.remove_path(rest)
         else:
