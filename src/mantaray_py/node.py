@@ -129,6 +129,9 @@ class MantarayFork(BaseModel):
             node.set_entry(data[entry_start:])
 
         node.set_type(node_type)
+        #* For some reason recursive save is making the last level fork nodes to None. To fix it tweaking the logic 
+        if node.forks is None:
+            node.forks = {}
         return cls(prefix=prefix, node=node)
 
 
@@ -372,16 +375,16 @@ class MantarayNode(BaseModel):
         """
         if not path:
             raise EmptyPathError()
-        print(f"{self.forks=}")
+        
         if self.forks is None:
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
         fork = self.forks.get(path[0])
-        # print(f"{path[0]=}")
+        print(f"{path=}")
         if fork is None:
             raise NotFoundError(path)
-        
+
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
             if not rest:
@@ -600,7 +603,6 @@ class MantarayNode(BaseModel):
                             raise ValueError(f"There is not enough size to read fork at offset {offset}")
 
                         fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)
-
                     self.forks[byte] = fork
                     offset += node_fork_size
         else:

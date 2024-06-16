@@ -1,12 +1,8 @@
 import pytest
 from rich.console import Console
 
-from mantaray_py import (
-    MantarayNode,
-    check_for_separator,
-    gen_32_bytes,
-    init_manifest_node,
-)
+from mantaray_py import (MantarayNode, check_for_separator, gen_32_bytes,
+                         init_manifest_node)
 from mantaray_py.node import NotFoundError
 
 console = Console()
