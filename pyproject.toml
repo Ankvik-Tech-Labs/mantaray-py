@@ -122,8 +122,8 @@ ignore = [
     "ISC001", # causes unexpected behaviour with formatter
 ]
 [tool.ruff.lint.pylint]
-# The MantarayNode class has 23 public methods just to ignore unnecessary warnings
-max-public-methods = 23
+# The MantarayNode class has 24 public methods just to ignore unnecessary warnings
+max-public-methods = 24
 
 [tool.ruff.lint.isort]
 known-first-party = ["mantaray_py"]

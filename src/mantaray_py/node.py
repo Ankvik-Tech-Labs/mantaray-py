@@ -1,9 +1,10 @@
 import json
 import re
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from eth_utils import keccak
 from pydantic import BaseModel, ConfigDict
+from rich.console import Console
 from rich.traceback import install
 
 from mantaray_py.types import (
@@ -17,6 +18,7 @@ from mantaray_py.types import (
 from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decrypt, equal_bytes, flatten_bytes_array
 
 install()
+console = Console()
 
 PATH_SEPARATOR = "/"
 PATH_SEPARATOR_BYTE = 47
@@ -79,8 +81,10 @@ class MantarayFork(BaseModel):
         data = bytes([node_type]) + prefix_len_bytes + prefix_bytes + entry
 
         if self.node.is_with_metadata_type():
-            json_string = json.dumps(self.node.get_metadata())
-            metadata_bytes = json_string.encode("utf-8")
+            # console.log(json.dumps(self.node.get_metadata()).replace(' ', ''))
+            json_string = json.dumps(self.node.get_metadata()).replace(" ", "")
+            # * default utf-8 encoding
+            metadata_bytes = json_string.encode()
 
             metadata_size_with_size = len(metadata_bytes) + node_fork_sizes.metadata
             padding = self.__create_metadata_padding(metadata_size_with_size)
@@ -129,7 +133,8 @@ class MantarayFork(BaseModel):
             node.set_entry(data[entry_start:])
 
         node.set_type(node_type)
-        #* For some reason recursive save is making the last level fork nodes to None. To fix it tweaking the logic 
+        # * For some reason recursive save is making the last level fork nodes to None. To fix it tweaking the logic
+        # ! FIXME: this condition should never happpen. Most likely some recursive fn. is breaking
         if node.forks is None:
             node.forks = {}
         return cls(prefix=prefix, node=node)
@@ -281,10 +286,10 @@ class MantarayNode(BaseModel):
         Adds a fork to the current node based on the provided path, entry, and metadata.
 
         Parameters:
-        - path (list[int]): A list representing the path in bytes. Can be empty, in which case `entry`
+        - path (bytes): A byte array representing the path. Can be empty, in which case `entry`
         will be set as the current node's entry.
         - entry (Reference): The entry to be associated with the fork.
-        - metadata (Dict[str, Any], optional): Additional metadata to associate with the fork.
+        - metadata (Optional[MetadataMapping]): Additional metadata to associate with the fork.
         Defaults to an empty dictionary.
 
         Returns:
@@ -292,7 +297,8 @@ class MantarayNode(BaseModel):
         """
         if metadata is None:
             metadata = {}
-        if not path:
+
+        if len(path) == 0:
             self.set_entry(entry)
             if metadata:
                 self.set_metadata(metadata)
@@ -303,17 +309,17 @@ class MantarayNode(BaseModel):
             self.forks = {}
 
         if self.forks is None:
-            msg = "Fork mapping is not defined in the manifest"
-            raise ValueError(msg)
+            raise ValueError("Fork mapping is not defined in the manifest")
 
-        fork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])
 
-        if fork is None:
+        if not fork:
             new_node: MantarayNode = MantarayNode()
             if self.__obfuscation_key:
                 new_node.set_obfuscation_key(self.__obfuscation_key)
 
-            node_fork_sizes: NodeForkSizes = NodeForkSizes()
+            node_fork_sizes: NodeHeaderSizes = NodeForkSizes()
+            # * check for prefix size limit
             if len(path) > node_fork_sizes.prefix_max_size:
                 prefix = path[: node_fork_sizes.prefix_max_size]
                 rest = path[node_fork_sizes.prefix_max_size :]
@@ -327,6 +333,7 @@ class MantarayNode(BaseModel):
             new_node.set_entry(entry)
             if metadata:
                 new_node.set_metadata(metadata)
+
             new_node.__update_with_path_separator(path)
             self.forks[path[0]] = MantarayFork(prefix=path, node=new_node)
             self.make_dirty()
@@ -338,12 +345,14 @@ class MantarayNode(BaseModel):
         new_node = fork.node
 
         if rest_path:
+            # * move current common prefix node
             new_node = MantarayNode()
             new_node.set_obfuscation_key(self.__obfuscation_key or bytes(32))
             fork.node.__update_with_path_separator(rest_path)
             new_node.forks = {rest_path[0]: MantarayFork(prefix=rest_path, node=fork.node)}
             new_node.__make_edge()
 
+            # * if common path is full path new node is value type
             if len(path) == len(common_path):
                 new_node.__make_value()
 
@@ -360,7 +369,7 @@ class MantarayNode(BaseModel):
         self.__make_edge()
         self.make_dirty()
 
-    def get_fork_at_path(self, path: bytes) -> Optional[Union[Any, MantarayFork]]:
+    def get_fork_at_path(self, path: bytes) -> Optional[MantarayFork]:
         """
         Retrieves a MantarayFork under the given path.
 
@@ -375,15 +384,15 @@ class MantarayNode(BaseModel):
         """
         if not path:
             raise EmptyPathError()
-        
+
         if self.forks is None:
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
-        fork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])
         print(f"{path=}")
         if fork is None:
-            raise NotFoundError(path)
+            raise NotFoundError(path, fork.prefix)
 
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
@@ -391,7 +400,7 @@ class MantarayNode(BaseModel):
                 return fork
             return fork.node.get_fork_at_path(rest)
         else:
-            raise NotFoundError(path)
+            raise NotFoundError(path, fork.prefix)
 
     def remove_path(self, path: bytes) -> None:
         """
@@ -484,7 +493,7 @@ class MantarayNode(BaseModel):
         reference_len_bytes: bytes = serialise_reference_len(self.__entry)
 
         # ForksIndexBytes
-        index = IndexBytes()
+        index: IndexBytes = IndexBytes()
         for fork_index in self.forks.keys():
             index.set_byte(int(fork_index))
         index_bytes = index.get_bytes()
@@ -495,17 +504,17 @@ class MantarayNode(BaseModel):
         for byte in range(256):
             byte = int(byte)
             if index.check_byte_present(byte):
-                fork = self.forks.get(byte)
+                fork: MantarayFork = self.forks.get(byte)
                 if fork is None:
                     raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
                 fork_serialisations += bytearray(fork.serialise())
 
-        # print(f"{list(bytearray(self.__obfuscation_key))=}")
-        # print(f"{list(bytearray(version_bytes))=}")
-        # print(f"{list(bytearray(reference_len_bytes))=}")
-        # print(f"{list(bytearray(self.__entry))=}")
-        # print(f"{list(bytearray(index_bytes))=}")
-        # print(f"{list(bytearray(fork_serialisations))=}")
+        # console.print(f"{bytearray(self.__obfuscation_key)=}")
+        # console.print(f"{version_bytes=}")
+        # console.print(f"{reference_len_bytes=}")
+        # console.print(f"{self.__entry=}")
+        # console.print(f"{index_bytes=}")
+        # console.print(f"{fork_serialisations=}")
 
         bytes_data = b"".join(
             [
@@ -525,7 +534,6 @@ class MantarayNode(BaseModel):
         # print(f"{list(bytearray(bytes_data))=}")
 
         return bytes_data
-        return remove_space_and_add_newlines(bytes_data)
 
     def deserialise(self, data: bytes) -> None:
         """

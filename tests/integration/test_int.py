@@ -104,6 +104,8 @@ async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_pos
         {"Content-Type": "image/png", "Filename": "icon.png"},
     )
     i_node.add_fork(b"/", bytes(32), {"website-index-document": "index.html"})
+    
+    console.log(i_node.forks)
 
     save_function = create_save_function(bee_class, get_debug_postage)
     i_node_ref = i_node.save(save_function)
@@ -153,10 +155,11 @@ async def test_construct_manifests_of_testpage_folder(get_debug_postage, bee_cla
         upload_file(image_path, get_debug_postage, bee_class),
     )
     text_reference = upload_data(
-        bytes([104, 97, 108, 105]), get_debug_postage, bee_class
+        bytes(bytearray([104, 97, 108, 105])), get_debug_postage, bee_class
     )
 
     i_node = MantarayNode()
+    console.log(i_node)
     i_node.add_fork(
         b"index.html",
         hex_to_bytes(index_reference),
@@ -188,8 +191,9 @@ async def test_construct_manifests_of_testpage_folder(get_debug_postage, bee_cla
             "website-index-document": "index.html",
         },
     )
+    console.log(i_node.forks)
 
-    save_function = create_save_function(bee_class, get_debug_postage)
+    # save_function = create_save_function(bee_class, get_debug_postage)
     # i_node_ref = i_node.save(save_function)
 
     assert list(i_node.forks.keys())[::-1] == list(node.forks.keys())
