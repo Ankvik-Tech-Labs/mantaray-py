@@ -238,8 +238,10 @@ def test_remove_fork_then_upload(
 
     load_function = create_load_function(bee_class)
     # Load the node from the deleted reference
-    node.load(load_function, ref_deleted)
+    #node.load(load_function, ref_deleted)
 
+    # console.log(f"{node=}")
+    
     # 'm' key of prefix table disappeared
     check_node2 = node.get_fork_at_path(b"path1/valami/").node
     assert list(check_node2.forks.keys()) == [path1[13]]

@@ -135,9 +135,9 @@ class MantarayFork(BaseModel):
         node.set_type(node_type)
         # * For some reason recursive save is making the last level fork nodes to None. To fix it tweaking the logic
         # ! FIXME: this condition should never happpen. Most likely some recursive fn. is breaking
-        if node.forks is None:
-            node.forks = {}
-        console.log(f"-->{node.forks=}")
+        # if node.forks is None:
+        #     node.forks = {}
+        # console.log(f"-->{node.forks=}")
         return cls(prefix=prefix, node=node)
 
 
@@ -391,7 +391,7 @@ class MantarayNode(BaseModel):
             raise ValueError(msg)
 
         fork: MantarayFork = self.forks.get(path[0])
-        print(f"{path=}")
+        # print(f"{path=}")
         if fork is None:
             raise NotFoundError(path, fork.prefix)
 
@@ -417,15 +417,20 @@ class MantarayNode(BaseModel):
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
-        fork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])
         if fork is None:
             raise NotFoundError(path)
 
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
+
+            console.print(f"{rest.hex()=}")
+            console.print(f"{path[0]}")
+            console.print(f"{self.forks[path[0]]=}")
+
             if len(rest) == 0:
-                del self.forks[path[0]]
                 self.make_dirty()
+                del self.forks[path[0]]
                 return
             else:
                 fork.node.remove_path(rest)
@@ -437,6 +442,7 @@ class MantarayNode(BaseModel):
             msg = "Reference is undefined at manifest load"
             raise ValueError(msg)
         data = storage_loader(reference)
+        console.log(f"Data from bee: {data.hex()=}")
         self.deserialise(data)
         self.set_content_address(reference)
 
@@ -562,16 +568,24 @@ class MantarayNode(BaseModel):
             ref_bytes_size = data[node_header_size - 1]
             entry = data[node_header_size : node_header_size + ref_bytes_size]
 
+            #FIXME: in Bee. if one uploads a file on the bzz endpoint, the node under `/` gets 0 refsize
             if ref_bytes_size == 0:
                 entry = bytes(32)
-            self.__entry = entry
+            self.set_entry(bytes(entry))
             offset = node_header_size + ref_bytes_size
             index_bytes = data[offset : offset + 32]
+
+            """
+            Currently we don't persist the root nodeType when we marshal the manifest, as a result
+            the root nodeType information is lost on Unmarshal. This causes issues when we want to
+            perform a path 'Walk' on the root. If there is at least 1 fork, the root node type
+            is an edge, so we will deduce this information from index byte array
+            """
 
             if not equal_bytes(index_bytes, bytes(32)):
                 self.__make_edge()
             self.forks = {}
-            index_forks = IndexBytes()
+            index_forks: IndexBytes = IndexBytes()
             index_forks.set_bytes(bytearray(index_bytes))
             offset += 32
             node_fork_sizes = NodeForkSizes()
