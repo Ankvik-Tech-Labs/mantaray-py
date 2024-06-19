@@ -20,7 +20,7 @@ from mantaray_py.utils import IndexBytes, check_reference, common, encrypt_decry
 install()
 console = Console()
 
-PATH_SEPARATOR = "/"
+PATH_SEPARATOR = b"/"
 PATH_SEPARATOR_BYTE = 47
 PADDING_BYTE = 0x0A
 NODE_SIZE = 255
@@ -49,7 +49,7 @@ class MantarayFork(BaseModel):
     @staticmethod
     def __create_metadata_padding(metadata_size_with_size: int) -> bytes:
         # can be done as bytes(0) as well
-        padding = b""
+        padding: bytes = b""
         node_headers_sizes: NodeHeaderSizes = NodeHeaderSizes()
 
         if metadata_size_with_size < node_headers_sizes.obfuscation_key:
@@ -137,6 +137,7 @@ class MantarayFork(BaseModel):
         # ! FIXME: this condition should never happpen. Most likely some recursive fn. is breaking
         if node.forks is None:
             node.forks = {}
+        console.log(f"-->{node.forks=}")
         return cls(prefix=prefix, node=node)
 
 
@@ -274,7 +275,7 @@ class MantarayNode(BaseModel):
         self.__type = (NodeType.mask.value ^ NodeType.with_path_separator.value) & self.__type
 
     def __update_with_path_separator(self, path: bytes) -> None:
-        if b"/" in path[1:]:
+        if PATH_SEPARATOR in path[1:]:
             self.__make_with_path_separator()
         else:
             self.__make_not_with_path_separator()

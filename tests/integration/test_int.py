@@ -28,7 +28,7 @@ def create_save_function(
 
 def create_load_function(bee_class: Bee) -> Callable:
     def load_function(address: bytes) -> bytes:
-        # console.print(f"{address.hex()=}")
+        console.print(f"{address.hex()=}")
         return bee_class.download_data(bytes_to_hex(address)).data
 
     return load_function
@@ -104,7 +104,7 @@ async def test_should_generate_same_content_hash_as_bee(bee_class, get_debug_pos
         {"Content-Type": "image/png", "Filename": "icon.png"},
     )
     i_node.add_fork(b"/", bytes(32), {"website-index-document": "index.html"})
-    
+
     console.log(i_node.forks)
 
     save_function = create_save_function(bee_class, get_debug_postage)
@@ -159,7 +159,7 @@ async def test_construct_manifests_of_testpage_folder(get_debug_postage, bee_cla
     )
 
     i_node = MantarayNode()
-    console.log(i_node)
+
     i_node.add_fork(
         b"index.html",
         hex_to_bytes(index_reference),
@@ -193,8 +193,8 @@ async def test_construct_manifests_of_testpage_folder(get_debug_postage, bee_cla
     )
     console.log(i_node.forks)
 
-    # save_function = create_save_function(bee_class, get_debug_postage)
-    # i_node_ref = i_node.save(save_function)
+    save_function = create_save_function(bee_class, get_debug_postage)
+    i_node_ref = i_node.save(save_function)
 
     assert list(i_node.forks.keys())[::-1] == list(node.forks.keys())
 
@@ -210,41 +210,43 @@ async def test_construct_manifests_of_testpage_folder(get_debug_postage, bee_cla
     assert i_node == node
 
 
-# def test_remove_fork_then_upload(get_sample_mantaray_node, get_debug_postage, bee_class):
-#     sample_node = get_sample_mantaray_node
-#     node = sample_node['node']
-#     path1 = sample_node['paths'][0]
-#     path2 = sample_node['paths'][1]
+def test_remove_fork_then_upload(
+    get_sample_mantaray_node, get_debug_postage, bee_class
+):
+    sample_node = get_sample_mantaray_node
+    node: MantarayNode = sample_node["node"]
+    path1 = sample_node["paths"][0]
+    path2 = sample_node["paths"][1]
 
-#     save_function = create_save_function(bee_class, get_debug_postage)
-#     # Save the sample node
-#     ref_original = node.save(save_function)
+    save_function = create_save_function(bee_class, get_debug_postage)
+    # Save the sample node
+    ref_original = node.save(save_function)
 
-#     check_node1 = node.get_fork_at_path(b'path1/valami/').node
-#     ref_check_node1 = check_node1.get_content_address()
+    check_node1 = node.get_fork_at_path(b"path1/valami/").node
+    ref_check_node1 = check_node1.get_content_address()
 
-#     # Current forks of the node
-#     assert list(check_node1.forks.keys()) == [path1[13], path2[13]]
+    # Current forks of the node
+    assert list(check_node1.forks.keys()) == [path1[13], path2[13]]
 
-#     # Remove the path and save the node
-#     node.remove_path(path2)
+    # Remove the path and save the node
+    node.remove_path(path2)
 
-#     ref_deleted = node.save(save_function)
+    ref_deleted = node.save(save_function)
 
-#     # Root reference should not remain the same
-#     assert ref_deleted != ref_original
+    # Root reference should not remain the same
+    assert ref_deleted != ref_original
 
-#     load_function = create_load_function(bee_class)
-#     # Load the node from the deleted reference
-#     node.load(load_function, ref_deleted)
+    load_function = create_load_function(bee_class)
+    # Load the node from the deleted reference
+    node.load(load_function, ref_deleted)
 
-#     # 'm' key of prefix table disappeared
-#     check_node2 = node.get_fork_at_path(b'path1/valami/').node
-#     assert list(check_node2.forks.keys()) == [path1[13]]
+    # 'm' key of prefix table disappeared
+    check_node2 = node.get_fork_at_path(b"path1/valami/").node
+    assert list(check_node2.forks.keys()) == [path1[13]]
 
-#     # Reference should differ because the fork set changed
-#     ref_check_node2 = check_node2.get_content_address()
-#     assert ref_check_node2 != ref_check_node1
+    # Reference should differ because the fork set changed
+    ref_check_node2 = check_node2.get_content_address()
+    assert ref_check_node2 != ref_check_node1
 
 
 def test_modify_tree_and_save_load(bee_class, get_debug_postage):
