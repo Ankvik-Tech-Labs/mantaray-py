@@ -59,7 +59,9 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" == "ubuntu-latest" ]];
         then
+          npm install -g @ethersphere/bee-factory
           bee-factory start --detach 1.15.0-rc2
+
           hatch run test:pytest --cache-clear
         else
           hatch run test:test_unit_only
