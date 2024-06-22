@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - Fixing authors.md
 - Fixing authors.md
 - Fixed other doc files
+- Syntax fixed. chore: added comments in serialise method of the MantarayFork class
 
 ### 🧪 Testing
 
@@ -41,6 +42,7 @@ All notable changes to this project will be documented in this file.
 
 - Updated changelog
 - Updated changelog
+- Updated core version manager to regex_commit from hatch-vcs
 
 ### Del
 
