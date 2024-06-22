@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Helper methods added for testing
 - Integeration test setup done & first test added
 - Updated workflows to setup bee test node & run tests on windwos, mac & linux
+- Updated workflows to skip integration tests on windows
 
 ### ⚙️ Miscellaneous Tasks
 
