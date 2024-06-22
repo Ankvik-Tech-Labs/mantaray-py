@@ -790,7 +790,7 @@ def serialise_version(version: Union[MarshalVersion, str]) -> bytes:
     version_separator = ":"
     hash_bytes = keccak(text=(version_name + version_separator + version))
 
-    return hash_bytes[:31]
+    return hash_bytes[:31]  # type: ignore
 
 
 def serialise_reference_len(entry: Reference) -> bytes:

@@ -162,12 +162,11 @@ def encrypt_decrypt(
         key (bytes): The byte array used as the key.
         data (bytes): The byte array to be encrypted or decrypted.
         start_index (int, optional): The starting index in `data` where the operation should start. Defaults to 0.
-        end_index (int, optional): The ending index in `data` where the operation should end which
-        defaults to None, which means the operation will go until the end of `data`.
+        end_index (int, optional): The ending index in `data` where the operation should end which defaults to None, which means the operation will go until the end of `data`.
 
     Returns:
         Optional[bytes]: The encrypted or decrypted byte array, or None if the operation cannot be performed.
-    """
+    """  # noqa: E501
     if key == bytes(BYTES_LENGTH):
         return data
 
@@ -205,7 +204,7 @@ def keccak256_hash(*messages: Union[str, bytes, bytearray]) -> bytes:
             raise TypeError(msg)
         combined += message
 
-    return keccak(combined)
+    return keccak(combined)  # type: ignore
 
 
 def gen_32_bytes() -> bytes:
