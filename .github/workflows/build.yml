@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   test:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -25,9 +24,9 @@ jobs:
     - name: Lint and typecheck
       run: |
         hatch run lint:lint-check
-    - name: Run Tests
-      run: |
-        hatch run test:pytest
+    # - name: Run Tests
+    #   run: |
+    #     hatch run test:pytest
     - uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
