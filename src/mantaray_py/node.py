@@ -91,6 +91,9 @@ class MantarayFork(BaseModel):
         if self.node.is_with_metadata_type():
             # console.log(json.dumps(self.node.get_metadata()).replace(' ', ''))
             json_string = json.dumps(self.node.get_metadata()).replace(" ", "")
+            # * the uploaded data returned by the bee is very odd. All white spaces are removed from dictionary key pars
+            # * but the spaces after a `;` is kept as it is. So this is a hacky wat to fix this issue.
+            # * First remove all white spaces then replace the `;` with a `;` and a spaced followed by ;)
             json_string = json_string.replace(";", "; ")
             # * default utf-8 encoding
             metadata_bytes = json_string.encode()
