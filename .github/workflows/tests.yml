@@ -20,8 +20,8 @@ jobs:
 
    strategy:
      matrix:
-       os: [ubuntu-latest, macos-latest]
-       python-version: ["3.9", "3.10", "3.11"]
+       os: [ubuntu-latest, macos-latest, windows-latest]
+       python-version: ["3.9"] #, "3.10", "3.11"] Don't need them. hatch env matrix will handle it
    steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -36,6 +36,27 @@ jobs:
     - name: Lint and typecheck
       run: |
         hatch run lint:lint-check
+
+    - name: Install Docker CLI
+      run: |
+        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          brew install --cask docker
+        else
+          sudo apt-get update
+          sudo apt-get install -y docker-ce
+        fi
+    - name: Install bee-factory
+      run: |
+        npm install -g @ethersphere/bee-factory
+
+    - name: Run Bee Factory
+      run: |
+        bee-factory start --detach 1.15.0-rc2
     - name: Run Tests
       run: |
-        hatch run test:pytest
+        if [[ "${{ matrix.os }}" == "windows-latest" ]];
+        then
+          hatch run test:pyest --cache-clear
+        else
+          hatch run test:test_unit_only
+        fi

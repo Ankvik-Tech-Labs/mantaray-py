@@ -240,6 +240,7 @@ dependencies = [
 
 [tool.hatch.envs.test.scripts]
 test = "pytest"
+test_unit_only = "pytest tests/unit/"
 test-cov-xml = "pytest --cov-report=xml"
 
 
