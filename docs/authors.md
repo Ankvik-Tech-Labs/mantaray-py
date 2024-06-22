@@ -2,4 +2,4 @@
 title: Authors
 ---
 
-{% include AUTHORS.md %}
+{% include ../AUTHORS.md %}
