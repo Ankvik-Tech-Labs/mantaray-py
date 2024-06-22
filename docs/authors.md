@@ -1,5 +1,1 @@
----
-title: Authors
----
-
-{% include ../AUTHORS.md %}
+--8<-- "AUTHORS.md"
