@@ -67,7 +67,7 @@ plugins:
 
 watch:
     - docs
-    - mantaray_py
+    - src
 
 # Navigation
 nav:

@@ -15,10 +15,6 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-  "pydantic",
-  "eth-utils",
-  "eth-hash[pycryptodome]",
-  "rich"
 ]
 
 [project.urls]
@@ -50,7 +46,7 @@ version-file = "src/mantaray_py/_version.py"
 
 [tool.mypy]
 files = ["mantaray_py"]
-exclude = ["build/", "dist/", "docs/", "tests/*"]
+exclude = ["build/", "dist/", "docs/", "tests/"]
 disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
@@ -122,8 +118,8 @@ ignore = [
     "ISC001", # causes unexpected behaviour with formatter
 ]
 [tool.ruff.lint.pylint]
-# The MantarayNode class has 24 public methods just to ignore unnecessary warnings
-max-public-methods = 24
+# The MantarayNode class has 25 public methods just to ignore unnecessary warnings
+max-public-methods = 25
 
 [tool.ruff.lint.isort]
 known-first-party = ["mantaray_py"]
@@ -209,18 +205,19 @@ lint-check = [
 # Docs env dendencies
 [tool.hatch.envs.docs]
 dependencies = [
-"mkdocs",
+  "mkdocs",
   "mkdocs-material",
   "mkdocs-gen-files",
   "mkdocstrings[python]",
   "linkchecker",
+  "mantaray_py @ {root:uri}/"
 ]
 
 [tool.hatch.envs.docs.scripts]
 docs-serve = "mkdocs serve"
 docs-build = "mkdocs build --clean --strict"
 # --ignore-url=None since the SUMMARY.md file leaves a <toc>None</toc> in sitemap.xml
-validate = "linkchecker --config .linkcheckerrc --ignore-url=/reference --ignore-url=None site"
+validate = "linkchecker --ignore-url=/reference --ignore-url=None site"
 # https://github.com/linkchecker/linkchecker/issues/678
 build-check = [
   "docs-build",

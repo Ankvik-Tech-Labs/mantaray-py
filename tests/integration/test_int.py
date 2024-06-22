@@ -18,7 +18,7 @@ def create_save_function(
     bee_class: Bee, get_debug_postage: str
 ) -> Callable[[bytes], bytes]:
     def save_function(data: bytes) -> bytes:
-        # console.print(f"{bytes_to_hex(data)=}")
+        # console.print(f"{list(data)=}")
         hex_reference = bee_class.upload_data(get_debug_postage, data)
         # console.print(f"{str(hex_reference.reference)=}")
         return hex_to_bytes(str(hex_reference.reference))
@@ -28,7 +28,7 @@ def create_save_function(
 
 def create_load_function(bee_class: Bee) -> Callable:
     def load_function(address: bytes) -> bytes:
-        console.print(f"{address.hex()=}")
+        # console.print(f"{address.hex()=}")
         return bee_class.download_data(bytes_to_hex(address)).data
 
     return load_function
@@ -241,7 +241,7 @@ def test_remove_fork_then_upload(
     #node.load(load_function, ref_deleted)
 
     # console.log(f"{node=}")
-    
+
     # 'm' key of prefix table disappeared
     check_node2 = node.get_fork_at_path(b"path1/valami/").node
     assert list(check_node2.forks.keys()) == [path1[13]]

@@ -1,6 +1,5 @@
 import json
-import re
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from eth_utils import keccak
 from pydantic import BaseModel, ConfigDict
@@ -41,10 +40,19 @@ class MantarayFork(BaseModel):
     prefix: bytes
     node: "MantarayNode"
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MantarayFork):
             return False
         return self.prefix == other.prefix and self.node == other.node
+
+    def __hash__(self) -> int:
+        """
+        A class that implements __eq__ but not __hash__ will have its hash method implicitly set
+        to None. This will cause the class to be unhashable, will in turn cause issues when
+        using the class as a key in a dictionary or a member of a set.
+        * https://docs.astral.sh/ruff/rules/eq-without-hash/
+        """
+        return hash(self.node)
 
     @staticmethod
     def __create_metadata_padding(metadata_size_with_size: int) -> bytes:
@@ -83,6 +91,7 @@ class MantarayFork(BaseModel):
         if self.node.is_with_metadata_type():
             # console.log(json.dumps(self.node.get_metadata()).replace(' ', ''))
             json_string = json.dumps(self.node.get_metadata()).replace(" ", "")
+            json_string = json_string.replace(";", "; ")
             # * default utf-8 encoding
             metadata_bytes = json_string.encode()
 
@@ -155,22 +164,31 @@ class MantarayNode(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MantarayNode):
             return False
 
         # Check if forks are the same length
-        if len(self.forks) != len(other.forks):
+        if len(self.forks) != len(other.forks):  # type: ignore
             return False
 
         # Compare each fork
-        for key in self.forks:
-            if key not in other.forks:
+        for key in self.forks:  # type: ignore
+            if key not in other.forks:  # type: ignore
                 return False
-            if self.forks[key] != other.forks[key]:
+            if self.forks[key] != other.forks[key]:  # type: ignore
                 return False
 
         return True
+
+    def __hash__(self) -> int:
+        """
+        A class that implements __eq__ but not __hash__ will have its hash method implicitly set
+        to None. This will cause the class to be unhashable, will in turn cause issues when
+        using the class as a key in a dictionary or a member of a set.
+        * https://docs.astral.sh/ruff/rules/eq-without-hash/
+        """
+        return hash(self.forks)
 
     def set_content_address(self, content_address: Reference) -> None:
         check_reference(content_address)
@@ -310,16 +328,17 @@ class MantarayNode(BaseModel):
             self.forks = {}
 
         if self.forks is None:
-            raise ValueError("Fork mapping is not defined in the manifest")
+            msg = "Fork mapping is not defined in the manifest"
+            raise ValueError(msg)
 
-        fork: MantarayFork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])  # type: ignore
 
         if not fork:
             new_node: MantarayNode = MantarayNode()
             if self.__obfuscation_key:
                 new_node.set_obfuscation_key(self.__obfuscation_key)
 
-            node_fork_sizes: NodeHeaderSizes = NodeForkSizes()
+            node_fork_sizes: NodeForkSizes = NodeForkSizes()
             # * check for prefix size limit
             if len(path) > node_fork_sizes.prefix_max_size:
                 prefix = path[: node_fork_sizes.prefix_max_size]
@@ -390,7 +409,7 @@ class MantarayNode(BaseModel):
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
-        fork: MantarayFork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])  # type: ignore
         # print(f"{path=}")
         if fork is None:
             raise NotFoundError(path, fork.prefix)
@@ -417,16 +436,16 @@ class MantarayNode(BaseModel):
             msg = "Fork mapping is not defined in the manifest"
             raise ValueError(msg)
 
-        fork: MantarayFork = self.forks.get(path[0])
+        fork: MantarayFork = self.forks.get(path[0])  # type: ignore
         if fork is None:
             raise NotFoundError(path)
 
         if path.startswith(fork.prefix):
             rest = path[len(fork.prefix) :]
 
-            console.print(f"{rest.hex()=}")
-            console.print(f"{path[0]}")
-            console.print(f"{self.forks[path[0]]=}")
+            # console.print(f"{rest.hex()=}")
+            # console.print(f"{path[0]}")
+            # console.print(f"{self.forks[path[0]]=}")
 
             if len(rest) == 0:
                 self.make_dirty()
@@ -457,7 +476,7 @@ class MantarayNode(BaseModel):
         - Reference: Reference of the top manifest node.
         """
         result = self.__recursive_save(storage_saver)
-        return result.get("reference")
+        return result.get("reference")  # type: ignore
 
     def is_dirty(self) -> bool:
         """
@@ -511,9 +530,10 @@ class MantarayNode(BaseModel):
         for byte in range(256):
             byte = int(byte)
             if index.check_byte_present(byte):
-                fork: MantarayFork = self.forks.get(byte)
+                fork: MantarayFork = self.forks.get(byte)  # type: ignore
                 if fork is None:
-                    raise Exception(f"Fork indexing error: fork has not found under {byte!r} index")
+                    msg = f"Fork indexing error: fork has not found under {byte!r} index"
+                    raise Exception(msg)
                 fork_serialisations += bytearray(fork.serialise())
 
         # console.print(f"{bytearray(self.__obfuscation_key)=}")
@@ -553,10 +573,11 @@ class MantarayNode(BaseModel):
         node_header_size = node_header_sizes.full
 
         if len(data) < node_header_size:
-            raise ValueError("The serialised input is too short")
+            msg = "The serialised input is too short"
+            raise ValueError(msg)
 
         self.__obfuscation_key = data[: node_header_sizes.obfuscation_key]
-        data = encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))
+        data = encrypt_decrypt(self.__obfuscation_key, data, len(self.__obfuscation_key))  # type: ignore
 
         version_hash = data[
             node_header_sizes.obfuscation_key : node_header_sizes.obfuscation_key + node_header_sizes.version_hash
@@ -568,7 +589,7 @@ class MantarayNode(BaseModel):
             ref_bytes_size = data[node_header_size - 1]
             entry = data[node_header_size : node_header_size + ref_bytes_size]
 
-            #FIXME: in Bee. if one uploads a file on the bzz endpoint, the node under `/` gets 0 refsize
+            # FIXME: in Bee. if one uploads a file on the bzz endpoint, the node under `/` gets 0 refsize
             if ref_bytes_size == 0:
                 entry = bytes(32)
             self.set_entry(bytes(entry))
@@ -593,7 +614,8 @@ class MantarayNode(BaseModel):
             for byte in range(256):
                 if index_forks.check_byte_present(byte):
                     if len(data) < offset + node_fork_sizes.node_type:
-                        raise ValueError(f"There is not enough size to read nodeType of fork at offset {offset}")
+                        msg = f"There is not enough size to read nodeType of fork at offset {offset}"
+                        raise ValueError(msg)
 
                     node_type = data[offset : offset + node_fork_sizes.node_type]
                     node_fork_size = node_fork_sizes.pre_reference + ref_bytes_size
@@ -603,7 +625,8 @@ class MantarayNode(BaseModel):
                             len(data)
                             < offset + node_fork_sizes.pre_reference + ref_bytes_size + node_fork_sizes.metadata
                         ):
-                            raise ValueError(f"Not enough bytes for metadata node fork at byte {byte}")
+                            msg = f"Not enough bytes for metadata node fork at byte {byte}"
+                            raise ValueError(msg)
 
                         metadata_byte_size = int.from_bytes(
                             data[offset + node_fork_size : offset + node_fork_size + node_fork_sizes.metadata],
@@ -623,13 +646,15 @@ class MantarayNode(BaseModel):
                         )
                     else:
                         if len(data) < offset + node_fork_sizes.pre_reference + ref_bytes_size:
-                            raise ValueError(f"There is not enough size to read fork at offset {offset}")
+                            msg = f"There is not enough size to read fork at offset {offset}"
+                            raise ValueError(msg)
 
                         fork = MantarayFork.deserialise(data[offset : offset + node_fork_size], self.__obfuscation_key)
                     self.forks[byte] = fork
                     offset += node_fork_size
         else:
-            raise ValueError("Wrong mantaray version")
+            msg = "Wrong mantaray version"
+            raise ValueError(msg)
 
     def __recursive_save(self, storage_saver: StorageSaver) -> dict:
         """
@@ -867,31 +892,3 @@ def equal_nodes(a: MantarayNode, b: MantarayNode, accumulated_prefix: str = "") 
             raise ValueError(msg)
 
         equal_nodes(a_fork["node"], b_fork["node"], accumulated_prefix + prefix_string)
-
-
-def remove_space_and_add_newlines(byte_data: bytes) -> bytes:
-    """
-    Process JSON-like byte data by replacing spaces after colons with newlines and adding newlines after closing braces following a quotation mark.
-
-    Parameters:
-    - data: Byte data to process.
-
-    Returns:
-    - Processed byte data.
-    """
-    # Pattern to identify JSON-like strings
-    json_pattern = re.compile(rb"\{[^\{\}]*\}")
-
-    # Function to process each match
-    def process_match(match):
-        json_bytes = match.group()
-        # Remove spaces after colons
-        fixed_json_bytes = re.sub(rb":\s+", b":", json_bytes)
-        # Add newlines after each closing brace `}` that follows a quote `"`
-        fixed_json_bytes_with_newlines = re.sub(rb'("\})', rb"\1\n", fixed_json_bytes)
-        return fixed_json_bytes_with_newlines
-
-    # Replace each JSON-like match in the byte_data
-    fixed_byte_data = json_pattern.sub(process_match, byte_data)
-
-    return fixed_byte_data

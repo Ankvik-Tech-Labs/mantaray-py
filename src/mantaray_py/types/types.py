@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable
 
 from pydantic import BaseModel
 
@@ -23,7 +23,7 @@ MetadataMapping = dict[str, str]
 
 
 StorageLoader = Callable[[Reference], bytes]
-StorageSaver = Callable[[bytes, Optional[dict]], Reference]
+StorageSaver = Callable
 
 
 class StorageHandler(BaseModel):

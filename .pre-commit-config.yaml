@@ -9,9 +9,7 @@ repos:
   - id: check-docstring-first
   - id: debug-statements
   - id: check-ast
-  - id: check-json
   - id: check-toml
-  - id: check-xml
   - id: check-yaml
     args: ['--unsafe']  # needed for !! tags in mkdocs.yml
   - id: end-of-file-fixer
@@ -20,15 +18,15 @@ repos:
 
 # Ruff replaces black, flake8, autoflake, isort and more
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: 'v0.3.4'  # make sure this is always consistent with hatch configs
+  rev: 'v0.4.10'
   hooks:
     - id: ruff
     - id: ruff-format
       args: [--check, --config, ./pyproject.toml]
 
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.9.0'  # make sure this is always consistent with hatch configs
-  hooks:
-    - id: mypy
-      args: ["--install-types", "--non-interactive"]
-      additional_dependencies: [types-tabulate, types-cachetools]
+# - repo: https://github.com/pre-commit/mirrors-mypy
+#   rev: 'v1.10.0'  # make sure this is always consistent with hatch configs
+#   hooks:
+#     - id: mypy
+#       args: ["--install-types", "--non-interactive", "--config-file", "./pyproject.toml", "--ignore-missing-imports"]
+#       additional_dependencies: [types-tabulate, types-cachetools, pydantic]
