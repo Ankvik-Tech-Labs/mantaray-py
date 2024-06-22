@@ -32,12 +32,10 @@ allow-direct-references = true
 ##############
 
 [tool.hatch.version]
-source = "vcs"
-raw-options = { version_scheme = "no-guess-dev" }
+source = "regex_commit"
+commit_extra_args = ["-e"]
+path = "src/mantaray_py/__version__.py"
 
-
-[tool.hatch.build.hooks.vcs]
-version-file = "src/mantaray_py/_version.py"
 
 
 ##################
@@ -254,7 +252,7 @@ python = ["3.9", "3.10", "3.11", "3.12"]
 #########
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling", "hatch-regex-commit"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]

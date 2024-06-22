@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 - Tests fixed. 2 more to go. error: Romve the forks is not working properly maybe
 - Fixed 9 tests & all of them are passing
 - All workflow erros fixed
+- Fixed typo in build workflow
+- Fixed workflow to install bee-factory properly
+- Updated worflows to run only on linux
+
+### 📚 Documentation
+
+- Fixed authors.md
+- Fixing authors.md
+- Fixing authors.md
+- Fixed other doc files
 
 ### 🧪 Testing
 
@@ -20,6 +30,12 @@ All notable changes to this project will be documented in this file.
 - Integeration test setup done & first test added
 - Updated workflows to setup bee test node & run tests on windwos, mac & linux
 - Updated workflows to skip integration tests on windows
+- Don't need to run tests again for release if the build tests are passed
+- Updated workflows to run integration tests only on linux
+- Fixed workflows to run run bee test node for linux only
+- Conftest.py updated
+- Trying to fix issues with macOS workflow
+- Updated conftest.py file fixtures & removed autouse attribute
 
 ### ⚙️ Miscellaneous Tasks
 
