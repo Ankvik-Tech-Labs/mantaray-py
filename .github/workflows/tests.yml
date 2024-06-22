@@ -40,7 +40,8 @@ jobs:
     - name: Install Docker CLI
       run: |
         if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          brew install --cask docker
+          # brew install --cask docker
+          echo "Don't need docker for macOS as well"
         elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
           echo "Don't need docker for windows"
         else
@@ -56,7 +57,7 @@ jobs:
         bee-factory start --detach 1.15.0-rc2
     - name: Run Tests
       run: |
-        if [[ "${{ matrix.os }}" == "windows-latest" ]];
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]];
         then
           hatch run test:pyest --cache-clear
         else
