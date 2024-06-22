@@ -7,7 +7,7 @@ the development processes, but [other kinds of contributions] are also appreciat
 
 If you are new to using [git] or have never collaborated in a project previously,
 please have a look at [contribution-guide.org]. Other resources are also
-listed in the excellent [guide created by FreeCodeCamp] [^contrib1].
+listed in the excellent [guide created by FreeCodeCamp].
 
 Please notice, all users and contributors are expected to be **open,
 considerate, reasonable, and respectful**. When in doubt,
@@ -150,10 +150,10 @@ This often provides additional considerations and avoids unnecessary work.
    the PR as a draft first and mark it as ready for review after the feedbacks
    from the continuous integration (CI) system or any required fixes.
 
-[^contrib1]: Even though, these resources focus on open source projects and
-    communities, the general ideas behind collaborating with other developers
-    to collectively create software are general and can be applied to all sorts
-    of environments, including private companies and proprietary code bases.
+Even though, these resources focus on open source projects and
+communities, the general ideas behind collaborating with other developers
+to collectively create software are general and can be applied to all sorts
+of environments, including private companies and proprietary code bases.
 
 [black]: https://pypi.org/project/black/
 [contribution-guide.org]: http://www.contribution-guide.org/

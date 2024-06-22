@@ -92,4 +92,4 @@ It'll automatically watch for changes in your code.
 
 ## License
 
-This project is licensed under the terms of the [BSD 3-Clause License](./LICENSE) license.
+This project is licensed under the terms of the [BSD 3-Clause License](https://github.com/Ankvik-Tech-Labs/mantaray-py/blob/main/LICENSE) license.
