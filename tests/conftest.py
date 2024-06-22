@@ -18,8 +18,8 @@ ENV_FILE = PROJECT_PATH / "../.env"
 @pytest.fixture
 def get_sample_mantaray_node() -> dict[MantarayNode, bytes]:
     node = MantarayNode()
-    # random_address = gen_32_bytes()
-    random_address = bytes(bytearray([229, 5, 247, 157, 211, 167, 196, 164, 82, 13, 129, 139, 75, 95, 58, 43, 188, 41, 52, 27, 52, 221, 242, 140, 150, 81, 189, 90, 184, 120, 19, 31]))
+    random_address = gen_32_bytes()
+    #random_address = bytes(bytearray([229, 5, 247, 157, 211, 167, 196, 164, 82, 13, 129, 139, 75, 95, 58, 43, 188, 41, 52, 27, 52, 221, 242, 140, 150, 81, 189, 90, 184, 120, 19, 31]))
     node.set_entry(random_address)
 
     path1 = "path1/valami/elso".encode()
