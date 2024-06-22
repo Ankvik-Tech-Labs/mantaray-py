@@ -41,6 +41,8 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
           brew install --cask docker
+        elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          echo "Don't need docker for windows"
         else
           sudo apt-get update
           sudo apt-get install -y docker-ce
