@@ -41,7 +41,7 @@ def get_sample_mantaray_node() -> dict[MantarayNode, bytes]:
     }
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture
 def bee_api_url():
     if os.path.isfile(ENV_FILE):
         with open(ENV_FILE) as f:
@@ -54,7 +54,7 @@ def bee_api_url():
     return BEE_API_URL
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture
 def bee_debug_url():
     if os.path.isfile(ENV_FILE):
         with open(ENV_FILE) as f:

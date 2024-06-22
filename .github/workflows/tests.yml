@@ -48,9 +48,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-ce
         fi
-    - name: Install bee-factory
-      run: |
-        npm install -g @ethersphere/bee-factory
+    # - name: Install bee-factory
+    #   run: |
+    #     npm install -g @ethersphere/bee-factory
 
     # - name: Run Bee Factory
     #   run: |
