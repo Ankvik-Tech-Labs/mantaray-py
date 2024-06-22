@@ -52,13 +52,14 @@ jobs:
       run: |
         npm install -g @ethersphere/bee-factory
 
-    - name: Run Bee Factory
-      run: |
-        bee-factory start --detach 1.15.0-rc2
+    # - name: Run Bee Factory
+    #   run: |
+    #     bee-factory start --detach 1.15.0-rc2
     - name: Run Tests
       run: |
         if [[ "${{ matrix.os }}" == "ubuntu-latest" ]];
         then
+          bee-factory start --detach 1.15.0-rc2
           hatch run test:pyest --cache-clear
         else
           hatch run test:test_unit_only
