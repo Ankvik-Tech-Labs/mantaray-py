@@ -60,7 +60,7 @@ jobs:
         if [[ "${{ matrix.os }}" == "ubuntu-latest" ]];
         then
           bee-factory start --detach 1.15.0-rc2
-          hatch run test:pyest --cache-clear
+          hatch run test:pytest --cache-clear
         else
           hatch run test:test_unit_only
         fi
