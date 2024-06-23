@@ -5,7 +5,7 @@ from typing import Optional
 
 from rich.traceback import install
 
-from mantaray_py.node import MantarayNode, check_for_separator, equal_nodes, load_all_nodes
+from mantaray_py.node import MantarayFork, MantarayNode, check_for_separator, equal_nodes, load_all_nodes
 from mantaray_py.types.types import (
     MetadataMapping,
     NodeType,
@@ -26,6 +26,7 @@ from mantaray_py.utils import (
 )
 
 __all__ = [
+    "MantarayFork",
     "MantarayNode",
     "MetadataMapping",
     "NodeType",

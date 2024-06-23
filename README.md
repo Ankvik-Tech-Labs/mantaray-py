@@ -17,12 +17,131 @@
 
 </div>
 
+# Description
+
+With this package you can manipulate and interpret mantaray data via `MantarayNode` and `MantarayFork` abstractions.
+
 # Installation
 
 - Install using `pip`
 ```py
-pip install mantaray-py
+pip install mantaray_py
 ```
+
+# Usage
+
+### Construct Mantaray
+
+```py
+from mantaray_py import MantarayNode, MantarayFork, init_manifest_node, gen_32_bytes
+
+node = init_manifest_node()
+address1 = gen_32_bytes()
+address2 = gen_32_bytes()
+address3 = gen_32_bytes()
+address4 = gen_32_bytes()
+address5 = gen_32_bytes()
+address6 = gen_32_bytes()
+
+path1 = "path1/valami/elso".encode()
+path2 = "path1/valami/masodik".encode()
+path3 = "path1/valami/masodik.ext".encode()
+path4 = "path1/valami".encode()
+path5 = "path2".encode()
+path6 = "path3/haha".encode()
+
+node.add_fork(path1, address1, { "vmi": "elso" })
+node.add_fork(path2, address2)
+node.add_fork(path3, address3)
+node.add_fork(path4, address4, {"vmi": "negy"})
+node.add_fork(path5, address5)
+node.add_fork(path6, address6, {"vmi": "haha"})
+node.remove_path(path3)
+
+print(node)
+```
+
+### Mantaray Storage Operations
+
+```py
+from mantaray_py import MantarayNode
+
+node = MantarayNode()
+"""
+here `reference` parameter is a `Reference` type which can be a 32 or 64 of bytes
+and `load_function` is a [load_function: (address: bytes): bytes] typed function
+that returns the serialised raw data of a MantarayNode of the given reference. See tests/integration/test_int.py file for reference.
+"""
+node.load(load_function, reference)
+
+# Manipulate `node` object then save it again
+# (...)
+
+# save into the storage with a storage handler [save_function: (data: bytes): Reference]
+# See tests/integration/test_int.py file for reference.
+reference = node.save(save_function)
+```
+
+
+
+<details open>
+<summary>How It Works</summary>
+<br>
+
+# node binary format
+
+The following describes the format of a node binary format.
+
+```
+┌────────────────────────────────┐
+│    obfuscationKey <32 byte>    │
+├────────────────────────────────┤
+│ hash("mantaray:0.1") <31 byte> │
+├────────────────────────────────┤
+│     refBytesSize <1 byte>      │
+├────────────────────────────────┤
+│       entry <32/64 byte>       │
+├────────────────────────────────┤
+│   forksIndexBytes <32 byte>    │
+├────────────────────────────────┤
+│ ┌────────────────────────────┐ │
+│ │           Fork 1           │ │
+│ ├────────────────────────────┤ │
+│ │            ...             │ │
+│ ├────────────────────────────┤ │
+│ │           Fork N           │ │
+│ └────────────────────────────┘ │
+└────────────────────────────────┘
+```
+
+## Fork
+
+```
+┌───────────────────┬───────────────────────┬──────────────────┐
+│ nodeType <1 byte> │ prefixLength <1 byte> │ prefix <30 byte> │
+├───────────────────┴───────────────────────┴──────────────────┤
+│                    reference <32/64 bytes>                   │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Fork with metadata
+
+```
+┌───────────────────┬───────────────────────┬──────────────────┐
+│ nodeType <1 byte> │ prefixLength <1 byte> │ prefix <30 byte> │
+├───────────────────┴───────────────────────┴──────────────────┤
+│                    reference <32/64 bytes>                   │
+│                                                              │
+├─────────────────────────────┬────────────────────────────────┤
+│ metadataBytesSize <2 bytes> │     metadataBytes <varlen>     │
+├─────────────────────────────┘                                │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+</details>
+
 
 ---
 
