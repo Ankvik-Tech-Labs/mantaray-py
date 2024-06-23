@@ -18,8 +18,8 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://aviksaikat.github.io/mantaray-py/"
-Source = "https://github.com/aviksaikat/mantaray-py"
+Documentation = "https://ankvik-tech-labs.github.io/mantaray-py/"
+Source = "https://github.com/Ankvik-Tech-Labs/mantaray-py"
 
 [tool.hatch]
 
