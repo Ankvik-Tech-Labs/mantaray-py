@@ -80,3 +80,4 @@ nav:
         - Examples: Examples.md
     - Reference:
         - mantaray_py: reference/mantaray_py.md
+        - How-It-Works: mantaray.md
