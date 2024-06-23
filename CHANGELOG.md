@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.0.1] - 2024-06-22
+## [0.0.1] - 2024-06-23
 
 ### 🐛 Bug Fixes
 
@@ -23,6 +23,10 @@ All notable changes to this project will be documented in this file.
 - Fixing authors.md
 - Fixed other doc files
 - Syntax fixed. chore: added comments in serialise method of the MantarayFork class
+- Changelogs updated
+- Readme updated. fix: fixed issues with documentations
+- Readme updated. Examples.md page added. Index of docs webpage is updated
+- Docs updated
 
 ### 🧪 Testing
 
